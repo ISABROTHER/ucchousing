@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Mail, Lock, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { signUp, signIn } from '../lib/auth';
-import { PageType } from '../App';
+// src/pages/AuthPage.tsx
+import { useMemo, useState } from "react";
+import { Mail, Lock, User, ArrowRight, ShieldCheck } from "lucide-react";
+import { signUp, signIn } from "../lib/auth";
+import { PageType } from "../App";
 
 interface AuthPageProps {
   onNavigate: (page: PageType) => void;
@@ -10,16 +10,22 @@ interface AuthPageProps {
 
 export default function AuthPage({ onNavigate }: AuthPageProps) {
   const [isSignup, setIsSignup] = useState(false);
-  const [userType, setUserType] = useState<'student' | 'owner'>('student');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [userType, setUserType] = useState<"student" | "owner">("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+
+  const title = useMemo(() => (isSignup ? "Create account" : "Welcome back"), [isSignup]);
+  const subtitle = useMemo(
+    () => (isSignup ? "Sign up to find and book hostels faster." : "Sign in to continue to your dashboard."),
+    [isSignup]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
@@ -28,143 +34,164 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
       } else {
         await signIn(email, password);
       }
-      onNavigate('home');
+      onNavigate("home");
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err?.message || "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-[#DC143C] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-black mb-2">
-            {isSignup ? 'Create Account' : 'Welcome Back'}
-          </h1>
-          <p className="text-gray-600">
-            {isSignup
-              ? 'Join our hostel community'
-              : 'Sign in to your account'}
-          </p>
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-amber-200/50 blur-3xl" />
+        <div className="absolute -bottom-24 left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-rose-200/50 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.06)_1px,transparent_0)] [background-size:18px_18px]" />
+      </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-            {error}
-          </div>
-        )}
+      <div className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-slate-900">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold text-slate-900">UCC Housing</div>
+                <div className="text-xs font-medium text-slate-500">Secure access</div>
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignup && (
-            <>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{title}</h1>
+            <p className="mt-2 text-sm font-medium text-slate-600">{subtitle}</p>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm backdrop-blur">
+            {error && (
+              <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignup && (
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-800">Full name</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your name"
+                        required
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 pl-10 text-sm font-medium text-slate-900 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-800">Account type</label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setUserType("student")}
+                        className={`flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                          userType === "student"
+                            ? "border-amber-300 bg-amber-50 text-slate-900"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                        aria-pressed={userType === "student"}
+                      >
+                        Student
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setUserType("owner")}
+                        className={`flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                          userType === "owner"
+                            ? "border-amber-300 bg-amber-50 text-slate-900"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                        aria-pressed={userType === "owner"}
+                      >
+                        Hostel owner
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">Email</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DC143C]"
-                    placeholder="Your name"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
                     required
+                    autoComplete="email"
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 pl-10 text-sm font-medium text-slate-900 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  I am a:
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="student"
-                      checked={userType === 'student'}
-                      onChange={(e) => setUserType(e.target.value as 'student' | 'owner')}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-gray-700">Student</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="owner"
-                      checked={userType === 'owner'}
-                      onChange={(e) => setUserType(e.target.value as 'student' | 'owner')}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-gray-700">Hostel Owner</span>
-                  </label>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete={isSignup ? "new-password" : "current-password"}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 pl-10 text-sm font-medium text-slate-900 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+                  />
                 </div>
               </div>
-            </>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DC143C]"
-                placeholder="your@email.com"
-                required
-              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-amber-400 active:scale-[0.99] disabled:opacity-60"
+              >
+                <span>{loading ? "Processing..." : isSignup ? "Create account" : "Sign in"}</span>
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </form>
+
+            <div className="mt-6 border-t border-slate-100 pt-5 text-center">
+              <p className="text-sm font-medium text-slate-600">
+                {isSignup ? "Already have an account?" : "Don’t have an account?"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignup(!isSignup);
+                    setError("");
+                  }}
+                  className="ml-2 font-bold text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:decoration-slate-500"
+                >
+                  {isSignup ? "Sign in" : "Sign up"}
+                </button>
+              </p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DC143C]"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+          {/* Footer note */}
+          <div className="mt-6 text-center text-xs font-medium text-slate-500">
+            By continuing, you agree to basic account security and acceptable use.
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#DC143C] text-white font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Processing...' : isSignup ? 'Create Account' : 'Sign In'}
-          </button>
-        </form>
-
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-          <p className="text-gray-600">
-            {isSignup ? 'Already have an account?' : "Don't have an account?"}
-            <button
-              onClick={() => {
-                setIsSignup(!isSignup);
-                setError('');
-              }}
-              className="ml-2 text-[#DC143C] font-semibold hover:underline"
-            >
-              {isSignup ? 'Sign In' : 'Sign Up'}
-            </button>
-          </p>
         </div>
       </div>
     </div>
