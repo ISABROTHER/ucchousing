@@ -1,4 +1,3 @@
-// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, AlertTriangle, Star, Building2 } from "lucide-react";
 import { PageType } from "../App";
