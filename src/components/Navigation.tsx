@@ -1,4 +1,3 @@
-// src/components/Navigation.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
 import { PageType } from "../App";
@@ -74,7 +73,7 @@ export default function Navigation({
             scrolled ? "px-3 py-2 shadow-sm" : "px-3 py-3"
           }`}
         >
-          {/* Left: Logo (Added mr-auto to push everything else to the right) */}
+          {/* Left: Logo (Pushed to left) */}
           <button
             onClick={() => handleNavClick("home")}
             className="mr-auto flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
@@ -85,7 +84,7 @@ export default function Navigation({
             </div>
           </button>
 
-          {/* Middle Group: Search + Bookings */}
+          {/* Middle Group: Search + My Page */}
           <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             <button
               onClick={() => handleNavClick("search" as PageType)}
@@ -101,22 +100,22 @@ export default function Navigation({
               className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-2 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
               aria-label="My page"
             >
-              <Calendar className="h-5 w-5 shrink-0 text-slate-900" />
+              <User className="h-5 w-5 shrink-0 text-slate-900" />
               <span className="min-w-0 truncate hidden sm:inline">
-                {isLoggedIn && firstName ? firstName : "My Bookings"}
+                {isLoggedIn && firstName ? firstName : "My Page"}
               </span>
             </button>
           </div>
 
-          {/* Right: My Page button (User Icon, opens Side Menu) */}
+          {/* Right: Menu Button (Amber) */}
           <button
             onClick={() => setIsOpen((v) => !v)}
             className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-4 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
             aria-label="Toggle menu"
           >
-            {isOpen ? <X className="h-5 w-5" /> : <User className="h-5 w-5" />}
-            <span className="hidden xs:inline">My Page</span>
-            <span className="xs:hidden">My Page</span>
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span className="hidden xs:inline">Menu</span>
+            <span className="xs:hidden">Menu</span>
           </button>
         </div>
       </div>
@@ -130,7 +129,7 @@ export default function Navigation({
         <div className="flex h-full flex-col p-6 pt-24">
           <div className="flex items-center justify-between">
             <div className="text-lg font-bold text-slate-900">
-              {isLoggedIn && firstName ? `Hi, ${firstName}` : "My Page"}
+              {isLoggedIn && firstName ? `Hi, ${firstName}` : "Menu"}
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -157,13 +156,13 @@ export default function Navigation({
                 </button>
               ))}
 
-            {/* Quick action for My Bookings */}
+            {/* Quick action for My Page in Menu */}
             <button
               onClick={() => handleNavClick(myPageTarget)}
               className="flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] text-slate-900 hover:bg-slate-50"
             >
-              <Calendar className="h-6 w-6" />
-              My Bookings
+              <User className="h-6 w-6" />
+              {isLoggedIn ? "My Profile" : "My Page"}
             </button>
           </div>
 
@@ -191,5 +190,5 @@ export default function Navigation({
         </div>
       </div>
     </nav>
-  ); 
+  );
 }
