@@ -210,4 +210,4 @@ export default function HomeCategories({ onNavigate }: HomeCategoriesProps) {
       </div>
     </div>
   );
-}
+} 
