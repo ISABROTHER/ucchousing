@@ -36,19 +36,23 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const housingTypes = [
     { 
       title: "New Site", 
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/UCC_Science_Block.jpg/640px-UCC_Science_Block.jpg" // Actual UCC Science Block
+      image: "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=800&auto=format&fit=crop",
+      desc: "Modern campus residences"
     },
     { 
       title: "Old Site", 
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Sam_Jonah_Library_UCC.jpg/640px-Sam_Jonah_Library_UCC.jpg" // Actual UCC Library
+      image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop",
+      desc: "Historic halls & housing"
     },
     { 
       title: "Outside Campus", 
-      image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=600" // Representative private housing
+      image: "https://images.unsplash.com/photo-1600596542815-e32c8ec23fc2?q=80&w=800&auto=format&fit=crop",
+      desc: "Private hostels nearby"
     },
     { 
       title: "Traditional Halls", 
-      image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=600" // Representative Hall
+      image: "https://images.unsplash.com/photo-1595846519845-68e298c2edd8?q=80&w=800&auto=format&fit=crop",
+      desc: "Community living"
     },
   ];
 
@@ -83,29 +87,33 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <p className="text-lg font-medium text-slate-600 mt-1">Find your new home!</p>
           </div>
 
-          {/* 4 Housing Boxes */}
+          {/* 4 Premium Cards */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {housingTypes.map((type) => (
               <button
                 key={type.title}
                 onClick={() => onNavigate("search")}
-                className="group flex flex-col text-left focus:outline-none"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-amber-200"
               >
-                {/* Photo Holder */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-200 transition-all duration-300 group-hover:shadow-md group-focus:ring-4 group-focus:ring-amber-200">
+                {/* Card Image */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img 
                     src={type.image} 
                     alt={type.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  {/* Dark overlay for text readability on hover if needed, currently clean */}
-                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
                 </div>
                 
-                {/* Title */}
-                <span className="mt-3 text-base font-bold text-slate-900 group-hover:text-amber-700">
-                  {type.title}
-                </span>
+                {/* Card Content */}
+                <div className="flex flex-1 flex-col p-4">
+                  <span className="text-base font-bold text-slate-900 group-hover:text-amber-700">
+                    {type.title}
+                  </span>
+                  <span className="mt-1 text-xs font-medium text-slate-500">
+                    {type.desc}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
