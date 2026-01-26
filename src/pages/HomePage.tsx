@@ -1,4 +1,3 @@
-// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, AlertTriangle, Star } from "lucide-react";
 import { PageType } from "../App";
@@ -66,21 +65,25 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     <div className="min-h-screen bg-white text-slate-900">
       {/* Mobile-first spacing to sit nicely under your new pill header */}
       <div className="mx-auto max-w-5xl px-4 pb-12 pt-24 sm:pt-28">
-        {/* Hero media (rounded, like the reference image block).
-            Swap to a real image later by setting style={{ backgroundImage: `url(...)` }} */}
+        {/* Hero media with the requested image */}
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
-          <div className="aspect-[16/10] w-full sm:aspect-[16/9]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.35),transparent_55%),radial-gradient(circle_at_70%_30%,rgba(16,185,129,0.22),transparent_60%)]" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/5" />
+          <div className="aspect-[16/10] w-full sm:aspect-[16/9] relative">
+            <img 
+              src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png" 
+              alt="UCC Housing" 
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            {/* Subtle overlay to ensure text/ui contrast if needed later, and polish */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10" />
           </div>
         </div>
 
-        {/* Big headline (same structure as screenshot) */}
+        {/* Big headline */}
         <h1 className="mt-10 text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl">
           We want you to have a fun, safe and healthy student life.
         </h1>
 
-        {/* Action cards (beige blocks with arrow on the right) */}
+        {/* Action cards */}
         <div className="mt-8 space-y-4">
           {actions.map((item) => (
             <button
@@ -107,7 +110,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           ))}
         </div>
 
-        {/* Featured hostels (kept, but styled to fit the new home layout) */}
+        {/* Featured hostels */}
         <div className="mt-12">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
