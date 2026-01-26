@@ -16,6 +16,7 @@ type HousingKey = "New Site" | "Old Site" | "Outside Campus" | "Traditional Hall
 type HousingTypeCard = {
   title: HousingKey;
   image: string;
+  badge: string;
 };
 
 const HOUSING_TYPES: HousingTypeCard[] = [
@@ -23,21 +24,26 @@ const HOUSING_TYPES: HousingTypeCard[] = [
     title: "New Site",
     image:
       "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=800&auto=format&fit=crop",
+    badge: "On campus",
   },
   {
     title: "Old Site",
     image:
       "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop",
+    badge: "On campus",
   },
   {
     title: "Outside Campus",
+    // Fixed broken link with a reliable high-quality house image
     image:
-      "https://images.unsplash.com/photo-1600596542815-e32c8ec23fc2?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=800&auto=format&fit=crop",
+    badge: "Off campus",
   },
   {
     title: "Traditional Halls",
     image:
       "https://images.unsplash.com/photo-1595846519845-68e298c2edd8?q=80&w=800&auto=format&fit=crop",
+    badge: "On campus",
   },
 ];
 
@@ -216,6 +222,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+
+                    {/* Badge Restored (Top Left) */}
+                    <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm">
+                      {type.badge}
+                    </div>
                   </div>
 
                   <div className="flex flex-1 flex-col p-4">
