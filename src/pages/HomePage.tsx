@@ -1,6 +1,5 @@
-// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from 'react';
-import { MapPin, Search, Star, ShieldCheck, Tag, Globe, AlertTriangle } from 'lucide-react';
+import { MapPin, Search, Star, ShieldCheck, Tag, Globe, AlertTriangle, ArrowRight, Building2, CheckCircle2 } from 'lucide-react';
 import { PageType } from '../App';
 import { getFeaturedHostels } from '../lib/hostels';
 import HostelCard from '../components/HostelCard';
@@ -44,221 +43,180 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="relative overflow-hidden border-b border-slate-200">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-slate-50 to-emerald-50" />
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl" />
-        <div className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl" />
+    <div className="min-h-screen bg-white text-slate-900">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-slate-50 pb-20 pt-24 lg:pt-32">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-emerald-100/50 blur-3xl" />
+          <div className="absolute top-1/2 -left-24 h-72 w-72 rounded-full bg-sky-100/50 blur-3xl" />
+        </div>
 
-        <div className="relative">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-medium text-slate-700 backdrop-blur">
-                <ShieldCheck className="h-4 w-4 text-emerald-700" />
-                Verified stays, student-friendly pricing
-              </div>
-
-              <h1 className="text-4xl font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-5xl">
-                Find hostels you can trust
-              </h1>
-              <p className="mt-4 text-lg font-normal leading-[1.5] text-slate-600 sm:text-xl">
-                Search by city, compare options, and book with confidence using real reviews and transparent pricing.
-              </p>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/50 px-4 py-1.5 text-sm font-semibold text-emerald-800 backdrop-blur-sm">
+              <ShieldCheck className="h-4 w-4" />
+              <span>Verified student housing at UCC</span>
             </div>
+            
+            <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
+              Your home away from <span className="text-emerald-700">campus</span>
+            </h1>
+            
+            <p className="mx-auto mt-6 max-w-2xl text-lg font-normal leading-[1.5] text-slate-600 sm:text-xl">
+              Discover vetted hostels near your faculty. Safe, affordable, and approved by the student community.
+            </p>
 
-            <div className="mx-auto mt-10 max-w-2xl">
+            <div className="mx-auto mt-12 max-w-3xl">
               <form
                 onSubmit={handleSearch}
-                className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur sm:p-6"
+                className="group relative flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/50 transition-all focus-within:border-emerald-500/50 focus-within:ring-4 focus-within:ring-emerald-500/10 sm:flex-row sm:items-center sm:gap-2"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="relative flex-1">
-                    <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={searchCity}
-                      onChange={(e) => setSearchCity(e.target.value)}
-                      placeholder="Search by city (e.g., Oslo, Accra, London)"
-                      aria-label="Search by city"
-                      className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-12 pr-4 text-base font-normal leading-[1.5] text-slate-900 shadow-sm outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/15"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!canSearch}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-700/20 disabled:cursor-not-allowed disabled:bg-slate-300"
-                  >
-                    <Search className="h-5 w-5" />
-                    <span className="hidden sm:inline">Search</span>
-                    <span className="sm:hidden">Go</span>
-                  </button>
+                <div className="relative flex-1">
+                  <MapPin className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600" />
+                  <input
+                    type="text"
+                    value={searchCity}
+                    onChange={(e) => setSearchCity(e.target.value)}
+                    placeholder="Where do you want to stay?"
+                    className="h-14 w-full rounded-2xl border-none bg-transparent pl-14 pr-4 text-lg outline-none placeholder:text-slate-400"
+                  />
                 </div>
-
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-slate-600 sm:justify-start">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-                    <Tag className="h-4 w-4 text-slate-600" />
-                    Best-value picks
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-                    <Star className="h-4 w-4 text-amber-600" />
-                    Top-rated stays
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-                    <Globe className="h-4 w-4 text-sky-700" />
-                    Cities worldwide
-                  </span>
-                </div>
+                <button
+                  type="submit"
+                  disabled={!canSearch}
+                  className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-8 text-lg font-bold text-white transition-all hover:bg-emerald-800 active:scale-[0.98] disabled:bg-slate-200"
+                >
+                  <Search className="h-5 w-5" />
+                  Search
+                </button>
               </form>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm font-medium text-slate-500">
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> No hidden fees</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> 100% Verified</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Student rates</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2">
-              <Star className="h-6 w-6 text-amber-600" />
-              <h2 className="text-2xl font-bold leading-[1.2] text-slate-900 sm:text-3xl">
-                Featured hostels
-              </h2>
-            </div>
-            <p className="mt-2 text-base font-normal leading-[1.5] text-slate-600">
-              Handpicked stays with strong ratings, location, and value.
+      {/* Featured Section */}
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mb-12 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold leading-[1.2] text-slate-900 sm:text-4xl">
+              Most loved hostels
+            </h2>
+            <p className="text-lg font-normal leading-[1.5] text-slate-600">
+              Top-rated accommodation chosen by fellow students this semester.
             </p>
           </div>
-
           <button
-            type="button"
-            onClick={() => void loadFeatured()}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
+            onClick={() => onNavigate('search')}
+            className="group flex items-center gap-2 font-bold text-emerald-700 hover:text-emerald-800"
           >
-            Refresh
+            View all listings
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100">
-                <AlertTriangle className="h-5 w-5 text-rose-700" />
-              </div>
-              <div className="flex-1">
-                <p className="text-base font-semibold leading-[1.5] text-rose-900">{error}</p>
-                <p className="mt-1 text-sm font-normal leading-[1.5] text-rose-800">
-                  Check your connection and try again.
-                </p>
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => void loadFeatured()}
-                    className="inline-flex h-11 items-center justify-center rounded-xl bg-rose-700 px-5 text-sm font-semibold text-white transition hover:bg-rose-800 focus:outline-none focus:ring-4 focus:ring-rose-700/20"
-                  >
-                    Try again
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-8 text-center">
+            <AlertTriangle className="mx-auto h-8 w-8 text-rose-600" />
+            <p className="mt-4 font-bold text-rose-900">{error}</p>
+            <button onClick={() => void loadFeatured()} className="mt-4 text-sm font-bold text-rose-700 underline underline-offset-4">
+              Try refreshing
+            </button>
           </div>
         ) : loading ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="h-40 w-full animate-pulse rounded-xl bg-slate-100" />
-                <div className="mt-4 space-y-3">
-                  <div className="h-4 w-3/5 animate-pulse rounded bg-slate-100" />
-                  <div className="h-4 w-2/5 animate-pulse rounded bg-slate-100" />
-                  <div className="h-10 w-full animate-pulse rounded-xl bg-slate-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : featured.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featured.map((hostel) => (
-              <div key={hostel.id} className="group">
-                <div className="transition-transform duration-200 group-hover:-translate-y-0.5">
-                  <HostelCard hostel={hostel} onClick={() => onNavigate('detail', hostel.id)} />
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                <div className="aspect-[4/3] rounded-2xl bg-slate-200" />
+                <div className="mt-6 space-y-4">
+                  <div className="h-6 w-2/3 rounded-lg bg-slate-200" />
+                  <div className="h-4 w-full rounded-lg bg-slate-200" />
+                  <div className="h-12 w-full rounded-xl bg-slate-200" />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-              <Star className="h-6 w-6 text-slate-700" />
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {featured.map((hostel) => (
+              <HostelCard 
+                key={hostel.id} 
+                hostel={hostel} 
+                onClick={() => onNavigate('detail', hostel.id)} 
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Trust Section */}
+      <section className="bg-slate-900 py-24 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+            <div className="space-y-4">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+                <Building2 className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold leading-[1.2]">Premium Locations</h3>
+              <p className="text-lg font-normal leading-[1.5] text-slate-400">
+                Strategic spots within walking distance to lecture halls and campus facilities.
+              </p>
             </div>
-            <p className="mt-4 text-lg font-semibold leading-[1.5] text-slate-900">
-              No featured hostels yet
+            <div className="space-y-4">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+                <Star className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold leading-[1.2]">Verified Reviews</h3>
+              <p className="text-lg font-normal leading-[1.5] text-slate-400">
+                Honest feedback from actual residents to help you make the right choice.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+                <Tag className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold leading-[1.2]">Best Price Guarantee</h3>
+              <p className="text-lg font-normal leading-[1.5] text-slate-400">
+                We negotiate directly with owners to ensure you get the best student rates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[2rem] bg-emerald-700 px-8 py-16 text-center text-white sm:px-16">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute top-0 right-0 h-64 w-64 -translate-y-1/2 translate-x-1/2 rounded-full bg-emerald-600/50 blur-3xl" />
+            <div className="absolute bottom-0 left-0 h-64 w-64 translate-y-1/2 -translate-x-1/2 rounded-full bg-emerald-800/50 blur-3xl" />
+          </div>
+          
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold leading-[1.2] sm:text-5xl">Ready to find your room?</h2>
+            <p className="mx-auto mt-6 max-w-xl text-lg font-normal leading-[1.5] text-emerald-100/90 sm:text-xl">
+              Join 2,000+ UCC students who have found their perfect accommodation through our platform.
             </p>
-            <p className="mt-2 text-base font-normal leading-[1.5] text-slate-600">
-              Please check back soon, or refresh to try again.
-            </p>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <button
-                type="button"
-                onClick={() => void loadFeatured()}
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
+                onClick={() => onNavigate('search')}
+                className="h-14 w-full rounded-2xl bg-white px-8 text-lg font-bold text-emerald-900 transition-all hover:bg-emerald-50 sm:w-auto"
               >
-                Refresh
+                Browse Listings
+              </button>
+              <button className="h-14 w-full rounded-2xl border-2 border-emerald-500 bg-transparent px-8 text-lg font-bold text-white transition-all hover:bg-emerald-600 sm:w-auto">
+                List Your Hostel
               </button>
             </div>
           </div>
-        )}
-      </div>
-
-      <div className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:bg-slate-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-700">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="mt-4 text-lg font-bold leading-[1.2] text-slate-900">Global coverage</h3>
-              <p className="mt-2 text-base font-normal leading-[1.5] text-slate-600">
-                Browse student-friendly hostels across popular cities and campus areas.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:bg-slate-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-700">
-                <ShieldCheck className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="mt-4 text-lg font-bold leading-[1.2] text-slate-900">Trusted reviews</h3>
-              <p className="mt-2 text-base font-normal leading-[1.5] text-slate-600">
-                Make decisions using clear ratings and feedback from real travellers.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:bg-slate-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-700">
-                <Tag className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="mt-4 text-lg font-bold leading-[1.2] text-slate-900">Better value</h3>
-              <p className="mt-2 text-base font-normal leading-[1.5] text-slate-600">
-                Compare options quickly and pick the stay that fits your budget.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:flex-row">
-            <p className="text-base font-normal leading-[1.5] text-slate-700">
-              Ready to explore? Search a city to view available hostels.
-            </p>
-            <button
-              type="button"
-              onClick={() => onNavigate('search')}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/15"
-            >
-              Browse listings
-            </button>
-          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
