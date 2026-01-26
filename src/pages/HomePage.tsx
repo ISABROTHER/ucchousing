@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, AlertTriangle, Star, Building2, School, MapPin, Landmark } from "lucide-react";
+import { ArrowRight, AlertTriangle, Star, Image as ImageIcon } from "lucide-react";
 import { PageType } from "../App";
 import { getFeaturedHostels } from "../lib/hostels";
 import HostelCard from "../components/HostelCard";
@@ -14,34 +14,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const [featured, setFeatured] = useState<FeaturedHostel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-
-  // New Housing Categories
-  const housingCategories = [
-    { 
-      title: "New Site", 
-      icon: Building2, 
-      color: "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100",
-      borderColor: "group-hover:border-emerald-200"
-    },
-    { 
-      title: "Old Site", 
-      icon: School, 
-      color: "bg-amber-50 text-amber-700 group-hover:bg-amber-100",
-      borderColor: "group-hover:border-amber-200"
-    },
-    { 
-      title: "Outside Campus", 
-      icon: MapPin, 
-      color: "bg-sky-50 text-sky-700 group-hover:bg-sky-100",
-      borderColor: "group-hover:border-sky-200"
-    },
-    { 
-      title: "Traditional Halls", 
-      icon: Landmark, 
-      color: "bg-rose-50 text-rose-700 group-hover:bg-rose-100",
-      borderColor: "group-hover:border-rose-200"
-    },
-  ];
 
   useEffect(() => {
     void loadFeatured();
@@ -60,6 +32,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       setLoading(false);
     }
   };
+
+  const housingTypes = [
+    { title: "New Site", icon: ImageIcon },
+    { title: "Old Site", icon: ImageIcon },
+    { title: "Outside Campus", icon: ImageIcon },
+    { title: "Traditional Halls", icon: ImageIcon },
+  ];
 
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-20">
@@ -84,21 +63,38 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </h1>
         </div>
 
-        {/* HOUSING CATEGORY BOXES */}
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {housingCategories.map((item) => (
-            <button
-              key={item.title}
-              type="button"
-              onClick={() => onNavigate("search")}
-              className={`group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-slate-900/10 ${item.borderColor}`}
-            >
-              <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-colors ${item.color}`}>
-                <item.icon className="h-8 w-8" />
-              </div>
-              <span className="text-sm font-extrabold text-slate-900">{item.title}</span>
-            </button>
-          ))}
+        {/* HOUSING CATEGORIES SECTION */}
+        <div className="mt-12">
+          {/* Section Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-extrabold text-slate-900">Apply for housing</h2>
+            <p className="text-lg font-medium text-slate-600 mt-1">Find your new home!</p>
+          </div>
+
+          {/* 4 Housing Boxes */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {housingTypes.map((type) => (
+              <button
+                key={type.title}
+                onClick={() => onNavigate("search")}
+                className="group flex flex-col text-left focus:outline-none"
+              >
+                {/* Photo Holder */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-200 transition-all duration-300 group-hover:shadow-md group-focus:ring-4 group-focus:ring-amber-200">
+                  <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                    <type.icon className="h-10 w-10 opacity-50" />
+                  </div>
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+                </div>
+                
+                {/* Title */}
+                <span className="mt-3 text-base font-bold text-slate-900 group-hover:text-amber-700">
+                  {type.title}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Featured hostels */}
