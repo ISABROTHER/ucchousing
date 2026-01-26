@@ -1,4 +1,3 @@
-// src/components/Navigation.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
 import { PageType } from "../App";
@@ -60,16 +59,16 @@ export default function Navigation({
   return (
     <nav className="fixed top-0 z-50 w-full">
       <div className={`mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 ${scrolled ? "pt-2" : "pt-4"}`}>
-        {/* Pill container */}
+        {/* Pill container: ALWAYS one-row layout on mobile, scales down gracefully */}
         <div
           className={`flex items-center gap-2 rounded-3xl border border-slate-200 bg-white transition-all duration-300 ${
             scrolled ? "px-3 py-2 shadow-sm" : "px-3 py-3"
           }`}
         >
-          {/* Left: Logo (Added mr-auto to push everything else to the right) */}
+          {/* Left: Logo */}
           <button
             onClick={() => handleNavClick("home")}
-            className="mr-auto flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
+            className="flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
             aria-label="Go to home"
           >
             <div className="flex h-9 w-10 items-center justify-center rounded-2xl">
@@ -77,15 +76,15 @@ export default function Navigation({
             </div>
           </button>
 
-          {/* Middle Group: Removed flex-1/justify-center so they sit next to the menu */}
-          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          {/* Middle: Search + My page (kept in one row even on small screens) */}
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2 sm:gap-5">
             <button
               onClick={() => handleNavClick("search" as PageType)}
               className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-2 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
               aria-label="Search"
             >
               <Search className="h-5 w-5 shrink-0 text-slate-900" />
-              <span className="min-w-0 truncate hidden sm:inline">Search</span>
+              <span className="min-w-0 truncate">Search</span>
             </button>
 
             <button
@@ -94,11 +93,11 @@ export default function Navigation({
               aria-label="My page"
             >
               <User className="h-5 w-5 shrink-0 text-slate-900" />
-              <span className="min-w-0 truncate hidden sm:inline">My page</span>
+              <span className="min-w-0 truncate">My page</span>
             </button>
           </div>
 
-          {/* Right: Menu button */}
+          {/* Right: Menu button (matches reference “Menu” pill) */}
           <button
             onClick={() => setIsOpen((v) => !v)}
             className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-4 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
@@ -180,4 +179,4 @@ export default function Navigation({
       </div>
     </nav>
   );
-}
+} 
