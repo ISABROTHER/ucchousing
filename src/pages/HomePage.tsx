@@ -1,3 +1,4 @@
+// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, AlertTriangle, Star } from "lucide-react";
 import { PageType } from "../App";
@@ -30,8 +31,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       },
       {
         title: "Frequently Asked Questions",
-        description:
-          "The information you need about student housing — from applying to moving out.",
+        description: "The information you need about student housing — from applying to moving out.",
         onClick: () => onNavigate("faq" as PageType),
       },
       {
@@ -63,18 +63,20 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      {/* Mobile-first spacing to sit nicely under your new pill header */}
+      {/* Mobile-first spacing to sit nicely under your fixed pill header */}
       <div className="mx-auto max-w-5xl px-4 pb-12 pt-24 sm:pt-28">
-        {/* Hero media with the requested image */}
+        {/* Hero media (scaled to match the reference: less zoom/crop, consistent height across phones) */}
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
-          <div className="aspect-[16/10] w-full sm:aspect-[16/9] relative">
-            <img 
-              src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png" 
-              alt="UCC Housing" 
-              className="absolute inset-0 h-full w-full object-cover"
+          {/* Height-based scaling (more predictable than aspect ratio on different phones) */}
+          <div className="relative h-[240px] w-full sm:h-[360px] lg:h-[420px]">
+            <img
+              src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png"
+              alt="Student life"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              loading="eager"
             />
-            {/* Subtle overlay to ensure text/ui contrast if needed later */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/5" />
+            {/* subtle contrast like the screenshot */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10" />
           </div>
         </div>
 
