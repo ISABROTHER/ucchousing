@@ -29,16 +29,19 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   const [a, b, c, d, e] = safeImages;
 
   return (
-    // UPDATED CLASS: bg-slate-50 (light color), hover:bg-white, hover:border-emerald-200 (small color accent)
-    <div className="group/card flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-slate-50 p-4 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:border-emerald-200">
+    // UPDATED DESIGN: 
+    // 1. bg-white (Clean background)
+    // 2. border-2 border-slate-200 (Thicker, visible gray border)
+    // 3. shadow-lg (Stronger shadow for lift)
+    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
       
-      {/* 1. MOSAIC GRID IMAGES (Maintained design) */}
+      {/* 1. MOSAIC GRID IMAGES */}
       <button 
         onClick={onOpen} 
         className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
       >
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96">
-            {/* Large Left Image */}
+            {/* Large Left Image - Placeholder bg made darker (slate-200) for contrast */}
             <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
                 {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" />}
             </div>
@@ -64,16 +67,16 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
             </div>
         </div>
 
-        {/* Floating "See all photos" Button */}
+        {/* Floating "See all photos" Button - Added border for pop */}
         <div className="absolute bottom-4 right-4 z-10">
-            <div className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
                 <ImageIcon className="h-4 w-4" />
                 <span>See all photos</span>
             </div>
         </div>
       </button>
 
-      {/* 2. DETAILS BELOW (Clean: Title & Location only) */}
+      {/* 2. DETAILS BELOW (Title & Location) */}
       <div className="px-2 pb-2">
         <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors">
             {name}
@@ -173,7 +176,7 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
       ) : loading ? (
         <div className="grid grid-cols-1 gap-8">
            {[1,2].map(i => (
-             <div key={i} className="animate-pulse rounded-[2rem] border border-slate-100 bg-slate-50 p-4">
+             <div key={i} className="animate-pulse rounded-[2rem] border-2 border-slate-100 bg-white p-4">
                 <div className="h-80 w-full bg-slate-200 rounded-[1.5rem] mb-4"></div>
                 <div className="h-6 w-1/3 bg-slate-200 rounded"></div>
              </div>
