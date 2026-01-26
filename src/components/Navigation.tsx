@@ -1,4 +1,3 @@
-// src/components/Navigation.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
 import { PageType } from "../App";
