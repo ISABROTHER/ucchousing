@@ -29,8 +29,8 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   const [a, b, c, d, e] = safeImages;
 
   return (
-    // Added border/shadow/bg-white to make it "easy to see is a card"
-    <div className="group/card flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-slate-300">
+    // UPDATED CLASS: bg-slate-50 (light color), hover:bg-white, hover:border-emerald-200 (small color accent)
+    <div className="group/card flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-slate-50 p-4 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:border-emerald-200">
       
       {/* 1. MOSAIC GRID IMAGES (Maintained design) */}
       <button 
@@ -39,27 +39,27 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
       >
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96">
             {/* Large Left Image */}
-            <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-100">
+            <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
                 {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" />}
             </div>
 
             {/* Top Right 1 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-100">
+            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
                 {b && <img src={b} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 1" />}
             </div>
 
             {/* Top Right 2 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-100">
+            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
                 {c && <img src={c} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 2" />}
             </div>
 
              {/* Bottom Right 1 */}
-             <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-100">
+             <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
                 {d && <img src={d} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 3" />}
             </div>
 
             {/* Bottom Right 2 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-100">
+            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
                 {e && <img src={e} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 4" />}
             </div>
         </div>
@@ -173,9 +173,9 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
       ) : loading ? (
         <div className="grid grid-cols-1 gap-8">
            {[1,2].map(i => (
-             <div key={i} className="animate-pulse rounded-[2rem] border border-slate-200 bg-white p-4">
-                <div className="h-80 w-full bg-slate-100 rounded-[1.5rem] mb-4"></div>
-                <div className="h-6 w-1/3 bg-slate-100 rounded"></div>
+             <div key={i} className="animate-pulse rounded-[2rem] border border-slate-100 bg-slate-50 p-4">
+                <div className="h-80 w-full bg-slate-200 rounded-[1.5rem] mb-4"></div>
+                <div className="h-6 w-1/3 bg-slate-200 rounded"></div>
              </div>
            ))}
         </div>
