@@ -1,9 +1,8 @@
 // src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, AlertTriangle, Star, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, AlertTriangle, Star, Image as ImageIcon, Building2 } from "lucide-react";
 import { PageType } from "../App";
 import { getFeaturedHostels, getHostels } from "../lib/hostels";
-import HostelCard from "../components/HostelCard";
 
 interface HomePageProps {
   onNavigate: (page: PageType, hostelId?: string) => void;
@@ -176,7 +175,7 @@ function FeaturedMosaicCard({
 
         <div className="mt-4">
           <div className="relative overflow-hidden rounded-2xl bg-slate-100">
-            {/* Desktop/tablet mosaic (like your screenshot) */}
+            {/* Desktop/tablet mosaic */}
             <div className="hidden sm:grid grid-cols-4 grid-rows-2 gap-2 p-2">
               <div className="col-span-2 row-span-2 overflow-hidden rounded-xl bg-slate-200">
                 {a ? (
@@ -244,7 +243,7 @@ function FeaturedMosaicCard({
               </div>
             </div>
 
-            {/* Mobile gallery layout: clean 2x2 preview (no horizontal scroll) */}
+            {/* Mobile: no horizontal scroll */}
             <div className="grid sm:hidden grid-cols-2 gap-2 p-2">
               <div className="col-span-2 overflow-hidden rounded-xl bg-slate-200">
                 <div className="aspect-[16/9] w-full">
@@ -387,6 +386,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
   const housingTypes = useMemo(() => HOUSING_TYPES, []);
 
+  const featuredOne = featured.length > 0 ? featured[0] : undefined;
+
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-20">
       {/* HERO BANNER SECTION */}
@@ -518,28 +519,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-slate-100" />
-                  <div className="mt-5 space-y-3">
-                    <div className="h-5 w-2/3 animate-pulse rounded-lg bg-slate-100" />
-                    <div className="h-4 w-full animate-pulse rounded-lg bg-slate-100" />
-                    <div className="h-11 w-full animate-pulse rounded-2xl bg-slate-100" />
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="aspect-[16/9] w-full animate-pulse rounded-2xl bg-slate-100" />
+              <div className="mt-5 space-y-3">
+                <div className="h-5 w-2/3 animate-pulse rounded-lg bg-slate-100" />
+                <div className="h-4 w-full animate-pulse rounded-lg bg-slate-100" />
+                <div className="h-11 w-full animate-pulse rounded-2xl bg-slate-100" />
+              </div>
             </div>
-          ) : featured.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5">
-              {featured.map((hostel) => (
-                <FeaturedMosaicCard
-                  key={hostel.id}
-                  hostel={hostel}
-                  onOpen={() => onNavigate("detail", hostel.id)}
-                />
-              ))}
-            </div>
+          ) : featuredOne ? (
+            <FeaturedMosaicCard
+              hostel={featuredOne}
+              onOpen={() => onNavigate("detail", featuredOne.id)}
+            />
           ) : (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="text-base font-extrabold leading-[1.2] text-slate-900">No featured hostels yet</p>
@@ -553,17 +545,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </button>
             </div>
           )}
-
-          {/* Keep your original HostelCard grid available if you prefer it later */}
-          <div className="hidden">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((hostel) => (
-                <div key={hostel.id} className="transition-transform duration-200 hover:-translate-y-0.5">
-                  <HostelCard hostel={hostel} onClick={() => onNavigate("detail", hostel.id)} />
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
