@@ -73,8 +73,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               alt="UCC Housing" 
               className="absolute inset-0 h-full w-full object-cover"
             />
-            {/* Subtle overlay to ensure text/ui contrast if needed later, and polish */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10" />
+            {/* Subtle overlay to ensure text/ui contrast if needed later */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/5" />
           </div>
         </div>
 
@@ -123,65 +123,4 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <button
               type="button"
               onClick={() => onNavigate("search")}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
-            >
-              View all
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          {error ? (
-            <div className="mt-5 rounded-3xl border border-rose-200 bg-rose-50 p-6">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 text-rose-700" />
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-rose-900">{error}</p>
-                  <button
-                    type="button"
-                    onClick={() => void loadFeatured()}
-                    className="mt-3 inline-flex items-center justify-center rounded-2xl bg-rose-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-800 focus:outline-none focus:ring-4 focus:ring-rose-700/20"
-                  >
-                    Try again
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : loading ? (
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-slate-100" />
-                  <div className="mt-5 space-y-3">
-                    <div className="h-5 w-2/3 animate-pulse rounded-lg bg-slate-100" />
-                    <div className="h-4 w-full animate-pulse rounded-lg bg-slate-100" />
-                    <div className="h-11 w-full animate-pulse rounded-2xl bg-slate-100" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : featured.length > 0 ? (
-            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((hostel) => (
-                <div key={hostel.id} className="transition-transform duration-200 hover:-translate-y-0.5">
-                  <HostelCard hostel={hostel} onClick={() => onNavigate("detail", hostel.id)} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-              <p className="text-base font-bold text-slate-900">No featured hostels yet</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">Please check back soon.</p>
-              <button
-                type="button"
-                onClick={() => void loadFeatured()}
-                className="mt-5 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
-              >
-                Refresh
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-
