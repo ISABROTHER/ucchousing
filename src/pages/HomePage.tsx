@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, AlertTriangle, Star, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, AlertTriangle, Star } from "lucide-react";
 import { PageType } from "../App";
 import { getFeaturedHostels } from "../lib/hostels";
 import HostelCard from "../components/HostelCard";
@@ -34,10 +34,22 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   };
 
   const housingTypes = [
-    { title: "New Site", icon: ImageIcon },
-    { title: "Old Site", icon: ImageIcon },
-    { title: "Outside Campus", icon: ImageIcon },
-    { title: "Traditional Halls", icon: ImageIcon },
+    { 
+      title: "New Site", 
+      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/UCC_Science_Block.jpg/640px-UCC_Science_Block.jpg" // Actual UCC Science Block
+    },
+    { 
+      title: "Old Site", 
+      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Sam_Jonah_Library_UCC.jpg/640px-Sam_Jonah_Library_UCC.jpg" // Actual UCC Library
+    },
+    { 
+      title: "Outside Campus", 
+      image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=600" // Representative private housing
+    },
+    { 
+      title: "Traditional Halls", 
+      image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=600" // Representative Hall
+    },
   ];
 
   return (
@@ -81,11 +93,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               >
                 {/* Photo Holder */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-200 transition-all duration-300 group-hover:shadow-md group-focus:ring-4 group-focus:ring-amber-200">
-                  <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-                    <type.icon className="h-10 w-10 opacity-50" />
-                  </div>
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+                  <img 
+                    src={type.image} 
+                    alt={type.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {/* Dark overlay for text readability on hover if needed, currently clean */}
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                 </div>
                 
                 {/* Title */}
