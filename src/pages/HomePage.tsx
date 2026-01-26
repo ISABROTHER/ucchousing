@@ -114,26 +114,44 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       const data = await getFeaturedHostels(6);
       const list = Array.isArray(data) ? [...data] : [];
       
-      // Manually add "Nana Agyoma Hostel" to the featured list
-      // Using 'as any' to ensure it fits the type structure for display purposes
-      const manualHostel: any = {
-        id: "nana-agyoma-manual",
-        name: "Nana Agyoma Hostel",
-        description: "Premium accommodation located at Amamoma, close to the Diaspora halls.",
-        price: 3200,
-        address: "Amamoma, UCC",
-        location: "Amamoma, UCC", // Fallback if component uses location
-        rating: 4.8,
-        reviews_count: 42,
-        images: ["https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=600&auto=format&fit=crop"],
-        main_image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=600&auto=format&fit=crop",
-        amenities: ["Wifi", "Water", "Security"]
-      };
+      // Manually add Featured Hostels with Pictures
+      const manualHostels: any[] = [
+        {
+          id: "nana-agyoma-manual",
+          name: "Nana Agyoma Hostel",
+          description: "Premium accommodation located at Amamoma, close to the Diaspora halls. Spacious rooms.",
+          price: 3200,
+          address: "Amamoma, UCC",
+          location: "Amamoma",
+          rating: 4.8,
+          reviews_count: 42,
+          // Unique image for Nana Agyoma
+          main_image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600&auto=format&fit=crop",
+          images: ["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600&auto=format&fit=crop"],
+          amenities: ["Wifi", "Water", "Security"]
+        },
+        {
+          id: "success-city-manual",
+          name: "Success City Hostel",
+          description: "Modern student living with backup generator and study rooms. 5min walk to campus.",
+          price: 4500,
+          address: "Kwakyerkrom, UCC",
+          location: "Kwakyerkrom",
+          rating: 4.6,
+          reviews_count: 28,
+          // Unique image for Success City
+          main_image: "https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=600&auto=format&fit=crop",
+          images: ["https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=600&auto=format&fit=crop"],
+          amenities: ["AC", "Study Room", "Generator"]
+        }
+      ];
 
-      // Check if it's already in the list to avoid duplicates if DB has it
-      if (!list.find(h => h.name === manualHostel.name)) {
-        list.push(manualHostel);
-      }
+      // Add manual hostels if they aren't already in the DB list
+      manualHostels.forEach(h => {
+        if (!list.find(existing => existing.name === h.name)) {
+          list.push(h);
+        }
+      });
 
       setFeatured(list);
     } catch {
