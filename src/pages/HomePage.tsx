@@ -66,7 +66,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       
       {/* HERO BANNER SECTION 
         - Full width (w-full)
-        - Fixed height (h-64 mobile, h-80 desktop) to match 'Banner' style (Option 2)
+        - Fixed height (h-64 mobile, h-80 desktop)
         - No side margins/padding so it touches edges
       */}
       <div className="relative w-full h-64 sm:h-80 lg:h-96 bg-slate-100">
@@ -84,8 +84,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         
         {/* Headline */}
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-slate-100 sm:p-8">
-            <h1 className="text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            We want you to have a fun, safe and healthy student life.
+            <h1 className="text-2xl font-extrabold leading-[1.2] tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+              We have digitized the process of finding campus housing. UCC, find and apply for housing without stress. Hostel owners are just a click away.
             </h1>
         </div>
 
