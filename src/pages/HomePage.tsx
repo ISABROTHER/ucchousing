@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, AlertTriangle, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, AlertTriangle, Star, Building2, School, MapPin, Landmark } from "lucide-react";
 import { PageType } from "../App";
 import { getFeaturedHostels } from "../lib/hostels";
 import HostelCard from "../components/HostelCard";
@@ -10,38 +10,38 @@ interface HomePageProps {
 
 type FeaturedHostel = Awaited<ReturnType<typeof getFeaturedHostels>>[number];
 
-type ActionCard = {
-  title: string;
-  description: string;
-  onClick: () => void;
-};
-
 export default function HomePage({ onNavigate }: HomePageProps) {
   const [featured, setFeatured] = useState<FeaturedHostel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
-  const actions: ActionCard[] = useMemo(
-    () => [
-      {
-        title: "Apply for housing",
-        description: "Find your new home!",
-        onClick: () => onNavigate("search"),
-      },
-      {
-        title: "Frequently Asked Questions",
-        description:
-          "The information you need about student housing — from applying to moving out.",
-        onClick: () => onNavigate("faq" as PageType),
-      },
-      {
-        title: "Calendar",
-        description: "See what is taking place at your campus!",
-        onClick: () => onNavigate("calendar" as PageType),
-      },
-    ],
-    [onNavigate]
-  );
+  // New Housing Categories
+  const housingCategories = [
+    { 
+      title: "New Site", 
+      icon: Building2, 
+      color: "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100",
+      borderColor: "group-hover:border-emerald-200"
+    },
+    { 
+      title: "Old Site", 
+      icon: School, 
+      color: "bg-amber-50 text-amber-700 group-hover:bg-amber-100",
+      borderColor: "group-hover:border-amber-200"
+    },
+    { 
+      title: "Outside Campus", 
+      icon: MapPin, 
+      color: "bg-sky-50 text-sky-700 group-hover:bg-sky-100",
+      borderColor: "group-hover:border-sky-200"
+    },
+    { 
+      title: "Traditional Halls", 
+      icon: Landmark, 
+      color: "bg-rose-50 text-rose-700 group-hover:bg-rose-100",
+      borderColor: "group-hover:border-rose-200"
+    },
+  ];
 
   useEffect(() => {
     void loadFeatured();
@@ -64,18 +64,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-20">
       
-      {/* HERO BANNER SECTION 
-        - Increased height significantly to reveal more of the image
-        - h-96 (384px) on mobile -> h-[32rem] (512px) on tablet -> h-[40rem] (640px) on desktop
-        - This reduces the "cropping" effect while keeping the edge-to-edge look.
-      */}
+      {/* HERO BANNER SECTION */}
       <div className="relative w-full h-96 sm:h-[32rem] lg:h-[40rem] bg-slate-100">
         <img 
           src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png" 
           alt="UCC Housing Campus" 
           className="h-full w-full object-cover object-center"
         />
-        {/* Subtle gradient overlay for polish */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
 
@@ -89,29 +84,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </h1>
         </div>
 
-        {/* Action cards */}
-        <div className="mt-8 space-y-4">
-          {actions.map((item) => (
+        {/* HOUSING CATEGORY BOXES */}
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {housingCategories.map((item) => (
             <button
               key={item.title}
               type="button"
-              onClick={item.onClick}
-              className="group w-full rounded-3xl bg-amber-100/55 px-5 py-5 text-left transition hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-200 active:scale-[0.99]"
+              onClick={() => onNavigate("search")}
+              className={`group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-slate-900/10 ${item.borderColor}`}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-xl font-extrabold leading-[1.15] text-slate-900 sm:text-2xl">
-                    {item.title}
-                  </div>
-                  <div className="mt-2 text-base font-medium leading-[1.5] text-slate-700">
-                    {item.description}
-                  </div>
-                </div>
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-200/60 text-slate-900 transition group-hover:bg-amber-200">
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-                </div>
+              <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-colors ${item.color}`}>
+                <item.icon className="h-8 w-8" />
               </div>
+              <span className="text-sm font-extrabold text-slate-900">{item.title}</span>
             </button>
           ))}
         </div>
