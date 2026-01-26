@@ -1,8 +1,8 @@
-// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, AlertTriangle, Star, Image as ImageIcon, Building2 } from "lucide-react";
+import { ArrowRight, AlertTriangle, Star, Building2 } from "lucide-react";
 import { PageType } from "../App";
 import { getFeaturedHostels, getHostels } from "../lib/hostels";
+import HostelCard from "../components/HostelCard";
 
 interface HomePageProps {
   onNavigate: (page: PageType, hostelId?: string) => void;
@@ -57,6 +57,9 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Attempts to infer which of the 4 housing categories a hostel belongs to.
+ */
 function inferHousingKey(hostel: AllHostel): HousingKey | undefined {
   const candidates = [
     getStringField(hostel, "housingType"),
@@ -86,241 +89,6 @@ function inferHousingKey(hostel: AllHostel): HousingKey | undefined {
   return undefined;
 }
 
-function getImageUrls(hostel: FeaturedHostel): string[] {
-  const record = hostel as unknown as Record<string, unknown>;
-  const candidates: unknown[] = [
-    record.images,
-    record.image_urls,
-    record.imageUrls,
-    record.photos,
-    record.photo_urls,
-    record.gallery,
-    record.media,
-  ];
-
-  for (const c of candidates) {
-    if (Array.isArray(c)) {
-      const urls = c.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
-      if (urls.length > 0) return urls;
-    }
-  }
-
-  const single = [
-    record.image,
-    record.cover_image,
-    record.coverImage,
-    record.thumbnail,
-    record.thumbnail_url,
-  ].find((x) => typeof x === "string" && x.trim().length > 0) as string | undefined;
-
-  return single ? [single] : [];
-}
-
-function FeaturedMosaicCard({
-  hostel,
-  onOpen,
-}: {
-  hostel: FeaturedHostel;
-  onOpen: () => void;
-}) {
-  const images = getImageUrls(hostel);
-  const a = images[0];
-  const b = images[1];
-  const c = images[2];
-  const d = images[3];
-
-  const title =
-    (hostel as unknown as Record<string, unknown>).name &&
-    typeof (hostel as unknown as Record<string, unknown>).name === "string"
-      ? ((hostel as unknown as Record<string, unknown>).name as string)
-      : "Featured hostel";
-
-  const location =
-    (hostel as unknown as Record<string, unknown>).location &&
-    typeof (hostel as unknown as Record<string, unknown>).location === "string"
-      ? ((hostel as unknown as Record<string, unknown>).location as string)
-      : undefined;
-
-  const hasMosaic = Boolean(a && b);
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full overflow-hidden rounded-3xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
-      aria-label={`Open ${title}`}
-    >
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="truncate text-base font-extrabold leading-[1.2] text-slate-900">
-              {title}
-            </p>
-            {location ? (
-              <p className="mt-1 truncate text-sm font-semibold leading-[1.5] text-slate-600">
-                {location}
-              </p>
-            ) : (
-              <p className="mt-1 text-sm font-semibold leading-[1.5] text-slate-600">
-                Tap to view photos and details
-              </p>
-            )}
-          </div>
-
-          <span className="shrink-0 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-extrabold leading-[1.2] text-slate-800">
-            <ImageIcon className="h-4 w-4 text-slate-700" />
-            View photos
-          </span>
-        </div>
-
-        <div className="mt-4">
-          <div className="relative overflow-hidden rounded-2xl bg-slate-100">
-            {/* Desktop/tablet mosaic */}
-            <div className="hidden sm:grid grid-cols-4 grid-rows-2 gap-2 p-2">
-              <div className="col-span-2 row-span-2 overflow-hidden rounded-xl bg-slate-200">
-                {a ? (
-                  <img
-                    src={a}
-                    alt={`${title} photo 1`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full" />
-                )}
-              </div>
-
-              <div className="col-span-1 row-span-1 overflow-hidden rounded-xl bg-slate-200">
-                {b ? (
-                  <img
-                    src={b}
-                    alt={`${title} photo 2`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full" />
-                )}
-              </div>
-
-              <div className="col-span-1 row-span-1 overflow-hidden rounded-xl bg-slate-200">
-                {c ? (
-                  <img
-                    src={c}
-                    alt={`${title} photo 3`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full" />
-                )}
-              </div>
-
-              <div className="col-span-1 row-span-1 overflow-hidden rounded-xl bg-slate-200">
-                {d ? (
-                  <img
-                    src={d}
-                    alt={`${title} photo 4`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full" />
-                )}
-              </div>
-
-              <div className="col-span-1 row-span-1 overflow-hidden rounded-xl bg-slate-200">
-                {images[4] ? (
-                  <img
-                    src={images[4]}
-                    alt={`${title} photo 5`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full" />
-                )}
-              </div>
-            </div>
-
-            {/* Mobile: no horizontal scroll */}
-            <div className="grid sm:hidden grid-cols-2 gap-2 p-2">
-              <div className="col-span-2 overflow-hidden rounded-xl bg-slate-200">
-                <div className="aspect-[16/9] w-full">
-                  {a ? (
-                    <img
-                      src={a}
-                      alt={`${title} photo 1`}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full" />
-                  )}
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-xl bg-slate-200">
-                <div className="aspect-[4/3] w-full">
-                  {b ? (
-                    <img
-                      src={b}
-                      alt={`${title} photo 2`}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full" />
-                  )}
-                </div>
-              </div>
-
-              <div className="relative overflow-hidden rounded-xl bg-slate-200">
-                <div className="aspect-[4/3] w-full">
-                  {c ? (
-                    <img
-                      src={c}
-                      alt={`${title} photo 3`}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full" />
-                  )}
-                </div>
-
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
-                <div className="absolute bottom-2 right-2 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-extrabold text-slate-900 shadow-sm backdrop-blur">
-                  <ImageIcon className="h-4 w-4" />
-                  See all
-                </div>
-              </div>
-            </div>
-
-            {!hasMosaic ? (
-              <div className="absolute inset-0 flex items-center justify-center p-6">
-                <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-extrabold text-slate-900 shadow-sm backdrop-blur">
-                  Add at least 2 photos to show the gallery preview
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs font-semibold leading-[1.5] text-slate-500">
-            Tap to open details
-          </span>
-          <span className="inline-flex items-center gap-2 text-sm font-extrabold text-emerald-700 transition group-hover:text-emerald-800">
-            Open
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
 export default function HomePage({ onNavigate }: HomePageProps) {
   const [featured, setFeatured] = useState<FeaturedHostel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -344,7 +112,30 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     setError("");
     try {
       const data = await getFeaturedHostels(6);
-      setFeatured(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? [...data] : [];
+      
+      // Manually add "Nana Agyoma Hostel" to the featured list
+      // Using 'as any' to ensure it fits the type structure for display purposes
+      const manualHostel: any = {
+        id: "nana-agyoma-manual",
+        name: "Nana Agyoma Hostel",
+        description: "Premium accommodation located at Amamoma, close to the Diaspora halls.",
+        price: 3200,
+        address: "Amamoma, UCC",
+        location: "Amamoma, UCC", // Fallback if component uses location
+        rating: 4.8,
+        reviews_count: 42,
+        images: ["https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=600&auto=format&fit=crop"],
+        main_image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=600&auto=format&fit=crop",
+        amenities: ["Wifi", "Water", "Security"]
+      };
+
+      // Check if it's already in the list to avoid duplicates if DB has it
+      if (!list.find(h => h.name === manualHostel.name)) {
+        list.push(manualHostel);
+      }
+
+      setFeatured(list);
     } catch {
       setFeatured([]);
       setError("We could not load featured hostels right now. Please try again.");
@@ -385,8 +176,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   };
 
   const housingTypes = useMemo(() => HOUSING_TYPES, []);
-
-  const featuredOne = featured.length > 0 ? featured[0] : undefined;
 
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-20">
@@ -456,16 +245,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     />
                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
 
+                    {/* Badge (Top Left) */}
                     <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm">
                       {type.badge}
                     </div>
                   </div>
 
                   <div className="flex flex-1 flex-col p-4">
+                    {/* Title in Body */}
                     <p className="text-base font-extrabold leading-[1.2] text-slate-900 group-hover:text-amber-600 transition-colors">
                       {type.title}
                     </p>
 
+                    {/* View Link & Count */}
                     <div className="mt-auto flex items-center justify-between pt-2">
                       <span className="text-xs font-semibold text-slate-400">
                         {countsLoading ? "..." : `${count} listed`}
@@ -519,19 +311,26 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
           ) : loading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="aspect-[16/9] w-full animate-pulse rounded-2xl bg-slate-100" />
-              <div className="mt-5 space-y-3">
-                <div className="h-5 w-2/3 animate-pulse rounded-lg bg-slate-100" />
-                <div className="h-4 w-full animate-pulse rounded-lg bg-slate-100" />
-                <div className="h-11 w-full animate-pulse rounded-2xl bg-slate-100" />
-              </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-slate-100" />
+                  <div className="mt-5 space-y-3">
+                    <div className="h-5 w-2/3 animate-pulse rounded-lg bg-slate-100" />
+                    <div className="h-4 w-full animate-pulse rounded-lg bg-slate-100" />
+                    <div className="h-11 w-full animate-pulse rounded-2xl bg-slate-100" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : featuredOne ? (
-            <FeaturedMosaicCard
-              hostel={featuredOne}
-              onOpen={() => onNavigate("detail", featuredOne.id)}
-            />
+          ) : featured.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((hostel) => (
+                <div key={hostel.id} className="transition-transform duration-200 hover:-translate-y-0.5">
+                  <HostelCard hostel={hostel} onClick={() => onNavigate("detail", hostel.id)} />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="text-base font-extrabold leading-[1.2] text-slate-900">No featured hostels yet</p>
