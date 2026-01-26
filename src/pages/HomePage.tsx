@@ -1,4 +1,3 @@
-// src/pages/HomePage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, AlertTriangle, Star } from "lucide-react";
 import { PageType } from "../App";
@@ -31,7 +30,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       },
       {
         title: "Frequently Asked Questions",
-        description: "The information you need about student housing — from applying to moving out.",
+        description:
+          "The information you need about student housing — from applying to moving out.",
         onClick: () => onNavigate("faq" as PageType),
       },
       {
@@ -62,28 +62,32 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      {/* Mobile-first spacing to sit nicely under your fixed pill header */}
-      <div className="mx-auto max-w-5xl px-4 pb-12 pt-24 sm:pt-28">
-        {/* Hero media (scaled to match the reference: less zoom/crop, consistent height across phones) */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
-          {/* Height-based scaling (more predictable than aspect ratio on different phones) */}
-          <div className="relative h-[240px] w-full sm:h-[360px] lg:h-[420px]">
-            <img
-              src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png"
-              alt="Student life"
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              loading="eager"
-            />
-            {/* subtle contrast like the screenshot */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10" />
-          </div>
-        </div>
+    <div className="min-h-screen bg-white text-slate-900 pb-20">
+      
+      {/* HERO BANNER SECTION 
+        - Full width (w-full)
+        - Fixed height (h-64 mobile, h-80 desktop) to match 'Banner' style (Option 2)
+        - No side margins/padding so it touches edges
+      */}
+      <div className="relative w-full h-64 sm:h-80 lg:h-96 bg-slate-100">
+        <img 
+          src="https://kuulchat.com/universities/slides/daa2e0179416fa0829b3586d2410fd94.png" 
+          alt="UCC Housing Campus" 
+          className="h-full w-full object-cover"
+        />
+        {/* Subtle gradient overlay for polish */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+      </div>
 
-        {/* Big headline */}
-        <h1 className="mt-10 text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl">
-          We want you to have a fun, safe and healthy student life.
-        </h1>
+      {/* MAIN CONTENT CONTAINER */}
+      <div className="mx-auto max-w-5xl px-4 -mt-8 relative z-10">
+        
+        {/* Headline */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-slate-100 sm:p-8">
+            <h1 className="text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            We want you to have a fun, safe and healthy student life.
+            </h1>
+        </div>
 
         {/* Action cards */}
         <div className="mt-8 space-y-4">
@@ -113,8 +117,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         {/* Featured hostels */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between gap-4">
+        <div className="mt-16">
+          <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 text-amber-600" />
               <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
@@ -133,7 +137,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
 
           {error ? (
-            <div className="mt-5 rounded-3xl border border-rose-200 bg-rose-50 p-6">
+            <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-rose-700" />
                 <div className="min-w-0">
@@ -149,7 +153,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
           ) : loading ? (
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-slate-100" />
@@ -162,7 +166,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               ))}
             </div>
           ) : featured.length > 0 ? (
-            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((hostel) => (
                 <div key={hostel.id} className="transition-transform duration-200 hover:-translate-y-0.5">
                   <HostelCard hostel={hostel} onClick={() => onNavigate("detail", hostel.id)} />
@@ -170,7 +174,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               ))}
             </div>
           ) : (
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="text-base font-bold text-slate-900">No featured hostels yet</p>
               <p className="mt-2 text-sm font-medium text-slate-600">Please check back soon.</p>
               <button
