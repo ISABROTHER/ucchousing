@@ -1,5 +1,6 @@
+// src/components/Navigation.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X, Search, LogOut, Calendar, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
 import { PageType } from "../App";
 
 interface NavigationProps {
@@ -84,48 +85,43 @@ export default function Navigation({
             </div>
           </button>
 
-          {/* Middle Group: Search + My Bookings */}
-          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          {/* Right Group: Search, My Page, Menu */}
+          <div className="flex min-w-0 items-center gap-2">
+            
+            {/* 1. Search Button */}
             <button
               onClick={() => handleNavClick("search" as PageType)}
-              className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-2 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
+              className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
               aria-label="Search"
             >
               <Search className="h-5 w-5 shrink-0 text-slate-900" />
               <span className="min-w-0 truncate hidden sm:inline">Search</span>
             </button>
 
+            {/* 2. My Page Button (Amber - Direct Link - "Alone") */}
             <button
               onClick={() => handleNavClick(myPageTarget)}
-              className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-2 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
-              aria-label="My bookings"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
+              aria-label="My Page"
             >
-              {userType === 'owner' ? (
-                <LayoutDashboard className="h-5 w-5 shrink-0 text-slate-900" />
-              ) : (
-                <Calendar className="h-5 w-5 shrink-0 text-slate-900" />
-              )}
-              <span className="min-w-0 truncate hidden sm:inline">
-                {isLoggedIn && firstName ? firstName : (userType === 'owner' ? "Dashboard" : "My Bookings")}
-              </span>
+              {isLoggedIn ? <User className="h-5 w-5" /> : <User className="h-5 w-5" />}
+              <span>{isLoggedIn && firstName ? firstName : "My Page"}</span>
             </button>
-          </div>
 
-          {/* Right: My Page Button (Amber, with Menu Icon) */}
-          <button
-            onClick={() => setIsOpen((v) => !v)}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-4 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
-            aria-label="Toggle menu"
-          >
-            {/* The 'three thing' (Menu icon) is on the left of the text */}
-            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            <span className="hidden xs:inline">My Page</span>
-            <span className="xs:hidden">My Page</span>
-          </button>
+            {/* 3. Menu Button (Separate Shade Trigger) */}
+            <button
+              onClick={() => setIsOpen((v) => !v)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 transition-colors hover:bg-slate-100 active:scale-[0.98]"
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+
+          </div>
         </div>
       </div>
 
-      {/* Slide-in menu (mobile-first) */}
+      {/* Slide-in menu (Shade) */}
       <div
         className={`fixed inset-0 z-40 transform bg-white transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
@@ -134,7 +130,7 @@ export default function Navigation({
         <div className="flex h-full flex-col p-6 pt-24">
           <div className="flex items-center justify-between">
             <div className="text-lg font-bold text-slate-900">
-              {isLoggedIn && firstName ? `Hi, ${firstName}` : "My Page"}
+              {isLoggedIn && firstName ? `Hi, ${firstName}` : "Menu"}
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -161,13 +157,13 @@ export default function Navigation({
                 </button>
               ))}
 
-            {/* Quick action for My Bookings in Menu */}
+            {/* Extra My Page Link in Menu (for completeness) */}
             <button
               onClick={() => handleNavClick(myPageTarget)}
               className="flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] text-slate-900 hover:bg-slate-50"
             >
-              {userType === 'owner' ? <LayoutDashboard className="h-6 w-6" /> : <Calendar className="h-6 w-6" />}
-              {userType === 'owner' ? "Dashboard" : "My Bookings"}
+              <User className="h-6 w-6" />
+              {isLoggedIn ? "My Profile" : "My Page"}
             </button>
           </div>
 
