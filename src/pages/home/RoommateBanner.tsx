@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { PageType } from "../../App";
 
 interface RoommateBannerProps {
@@ -60,14 +60,14 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
           </div>
         </div>
 
-        {/* Right Side: Action Button */}
+        {/* Right Side: Action Button (White box, Red text, Search icon) */}
         <div className="relative flex shrink-0 items-center gap-2 pl-4">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors group-hover:bg-white group-hover:text-red-600">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-red-600 shadow-sm transition-transform group-hover:scale-105 active:scale-95">
             Smart Search
-            <ArrowRight className="h-3.5 w-3.5" />
+            <Search className="h-3.5 w-3.5" />
           </span>
         </div>
       </button>
     </div>
   );
-} 
+}
