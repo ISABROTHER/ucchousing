@@ -1,196 +1,71 @@
-// src/components/Navigation.tsx
-import { useEffect, useMemo, useState } from "react";
-import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
-import { PageType } from "../App";
+import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { PageType } from "../../App";
 
-interface NavigationProps {
-  currentPage: PageType;
+interface RoommateBannerProps {
   onNavigate: (page: PageType) => void;
-  userType?: "student" | "owner";
-  userName?: string;
-  isLoggedIn: boolean;
-  onLogout: () => void;
 }
 
-export default function Navigation({
-  currentPage,
-  onNavigate,
-  userType,
-  userName,
-  isLoggedIn,
-  onLogout,
-}: NavigationProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+const SEARCH_HINTS = [
+  'Try: "single room under 800"',
+  'Try: "shared room near campus"',
+  'Try: "Ayensu + self-contained"',
+  'Try: "quiet roommate + budget 600"',
+];
+
+export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
+  const [hintIndex, setHintIndex] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    const id = window.setInterval(() => {
+      setHintIndex((prev) => (prev + 1) % SEARCH_HINTS.length);
+    }, 2600);
+
+    return () => window.clearInterval(id);
   }, []);
 
-  const myPageTarget = useMemo<PageType>(() => {
-    if (!isLoggedIn) return "auth" as PageType;
-    if (userType === "owner") return "dashboard" as PageType;
-    return "my-bookings" as PageType;
-  }, [isLoggedIn, userType]);
-
-  // Extract first name for the pill display (e.g. "Isa" from "Isa Brother")
-  const firstName = useMemo(() => {
-    if (!userName) return "";
-    return userName.split(" ")[0];
-  }, [userName]);
-
-  const handleNavClick = (page: PageType) => {
-    onNavigate(page);
-    setIsOpen(false);
-  };
-
-  const menuLinks = useMemo(
-    () => [
-      { name: "Find Hostels", page: "search" as PageType, icon: Search, show: true },
-      {
-        name: "My Bookings",
-        page: "my-bookings" as PageType,
-        icon: Calendar,
-        show: isLoggedIn && userType === "student",
-      },
-      {
-        name: "Dashboard",
-        page: "dashboard" as PageType,
-        icon: LayoutDashboard,
-        show: isLoggedIn && userType === "owner",
-      },
-    ],
-    [isLoggedIn, userType]
-  );
-
   return (
-    <nav className="fixed top-0 z-50 w-full">
-      <div className={`mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 ${scrolled ? "pt-2" : "pt-4"}`}>
-        {/* Pill container */}
-        <div
-          className={`flex items-center gap-2 rounded-3xl border border-slate-200 bg-white transition-all duration-300 ${
-            scrolled ? "px-3 py-2 shadow-sm" : "px-3 py-3"
-          }`}
-        >
-          {/* Left: Logo (Pushed to left) */}
-          <button
-            onClick={() => handleNavClick("home")}
-            className="mr-auto flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
-            aria-label="Go to home"
-          >
-            <div className="flex h-9 w-10 items-center justify-center rounded-2xl">
-              {/* Updated to Wine Color (Rose-900) */}
-              <span className="text-3xl font-extrabold leading-none tracking-tight text-rose-900">S</span>
-            </div>
-          </button>
-
-          {/* Right Group: Search, My Page, Menu */}
-          <div className="flex min-w-0 items-center gap-2">
-            
-            {/* 1. Search Button */}
-            <button
-              onClick={() => handleNavClick("search" as PageType)}
-              className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
-              aria-label="Search"
-            >
-              <Search className="h-5 w-5 shrink-0 text-slate-900" />
-              <span className="min-w-0 truncate hidden sm:inline">Search</span>
-            </button>
-
-            {/* 2. My Page Button (Updated to Wine Color) */}
-            <button
-              onClick={() => handleNavClick(myPageTarget)}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-rose-900 px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-rose-800 active:scale-[0.98]"
-              aria-label="My Page"
-            >
-              {isLoggedIn ? <User className="h-5 w-5" /> : <User className="h-5 w-5" />}
-              <span>{isLoggedIn && firstName ? firstName : "My Page"}</span>
-            </button>
-
-            {/* 3. Menu Button (Separate Shade Trigger) */}
-            <button
-              onClick={() => setIsOpen((v) => !v)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 transition-colors hover:bg-slate-100 active:scale-[0.98]"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-
-          </div>
-        </div>
-      </div>
-
-      {/* Slide-in menu (Shade) */}
-      <div
-        className={`fixed inset-0 z-40 transform bg-white transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+    <div className="mx-auto max-w-5xl px-4 mt-10">
+      <button
+        type="button"
+        onClick={() => onNavigate("search")}
+        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-[#722F37] px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
+        aria-label="Open roommate and smart search"
       >
-        <div className="flex h-full flex-col p-6 pt-24">
-          <div className="flex items-center justify-between">
-            <div className="text-lg font-bold text-slate-900">
-              {isLoggedIn && firstName ? `Hi, ${firstName}` : "Menu"}
+        {/* Subtle Gradient/Shine Overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#722F37] to-[#85343d]" />
+        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+
+        {/* Left Side: Text */}
+        <div className="relative flex min-w-0 items-center gap-3 text-left">
+          <div className="min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+              <span className="font-extrabold text-white text-sm sm:text-base">
+                Need a roommate?
+              </span>
+
+              <span className="hidden text-xs font-semibold text-white/80 sm:inline-block">
+                Match by budget, lifestyle & location.
+              </span>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              aria-label="Close menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
 
-          <div className="mt-5 flex flex-col gap-2">
-            {menuLinks
-              .filter((l) => l.show)
-              .map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => handleNavClick(link.page)}
-                  className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] transition-colors ${
-                    currentPage === link.page ? "bg-rose-50 text-rose-900" : "text-slate-900 hover:bg-slate-50"
-                  }`}
-                >
-                  <link.icon className="h-6 w-6" />
-                  {link.name}
-                </button>
-              ))}
-
-            {/* Extra My Page Link in Menu (for completeness) */}
-            <button
-              onClick={() => handleNavClick(myPageTarget)}
-              className="flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] text-slate-900 hover:bg-slate-50"
-            >
-              <User className="h-6 w-6" />
-              {isLoggedIn ? "My Profile" : "My Page"}
-            </button>
-          </div>
-
-          <div className="mt-auto border-t border-slate-100 pt-6">
-            {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  onLogout();
-                  setIsOpen(false);
-                }}
-                className="flex w-full items-center gap-4 rounded-2xl p-4 text-base font-bold leading-[1.2] text-rose-600 hover:bg-rose-50"
-              >
-                <LogOut className="h-6 w-6" />
-                Sign Out
-              </button>
-            ) : (
-              <button
-                onClick={() => handleNavClick("auth" as PageType)}
-                className="flex w-full items-center justify-center rounded-2xl bg-slate-900 py-4 text-base font-bold leading-[1.2] text-white shadow-lg active:scale-[0.98]"
-              >
-                Sign In
-              </button>
-            )}
+            {/* Rotating Hint */}
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="truncate text-[11px] font-bold text-white/70 group-hover:text-white transition-colors">
+                {SEARCH_HINTS[hintIndex]}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+
+        {/* Right Side: Action Button */}
+        <div className="relative flex shrink-0 items-center gap-2 pl-4">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors group-hover:bg-white group-hover:text-[#722F37]">
+            Smart Search
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      </button>
+    </div>
   );
 }
