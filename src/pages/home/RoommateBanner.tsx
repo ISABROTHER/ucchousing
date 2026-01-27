@@ -7,38 +7,39 @@ interface RoommateBannerProps {
 
 export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
   return (
-    <div className="mx-auto max-w-5xl px-4 mt-12">
-      <div className="group relative overflow-hidden rounded-3xl bg-slate-900 shadow-xl ring-1 ring-slate-900/5 transition-transform hover:-translate-y-1 duration-500">
-        {/* Abstract background shapes */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 h-64 w-64 rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 blur-3xl" />
+    <div className="mx-auto max-w-5xl px-4 mt-10">
+      <button
+        onClick={() => onNavigate("search")}
+        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-slate-900 px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
+      >
+        {/* Subtle Background Gradients */}
+        <div className="absolute -left-4 -top-12 h-24 w-24 rounded-full bg-indigo-500/20 blur-xl" />
+        <div className="absolute -right-4 -bottom-12 h-24 w-24 rounded-full bg-emerald-500/20 blur-xl" />
         
-        {/* Animated shine effect */}
-        <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 group-hover:translate-x-[100%]" />
+        {/* Shine Animation */}
+        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
 
-        <div className="relative flex flex-col items-center justify-between gap-6 px-6 py-8 sm:flex-row sm:px-10">
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start gap-2 text-indigo-400">
-              <Sparkles className="h-5 w-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">New Feature</span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
-              I need a roommate
-            </h2>
-            <p className="max-w-md text-slate-400 font-medium">
-              Connect with other students, match preferences, and find your ideal roommate today.
-            </p>
+        {/* Left Side: Icon & Text */}
+        <div className="relative flex items-center gap-3 text-left">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-indigo-300">
+            <Sparkles className="h-4 w-4" />
           </div>
-
-          <button
-            onClick={() => onNavigate("search")}
-            className="group/btn inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-indigo-50 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95"
-          >
-            Get Started
-            <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-          </button>
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+            <span className="font-bold text-white text-sm sm:text-base">
+              Need a roommate?
+            </span>
+            <span className="hidden text-xs font-medium text-slate-400 sm:inline-block">
+              Connect with students & find your match.
+            </span>
+          </div>
         </div>
-      </div>
+
+        {/* Right Side: Action */}
+        <div className="relative flex items-center gap-2 pl-4 text-xs font-bold text-white transition-colors group-hover:text-indigo-200 sm:text-sm">
+          <span>Get Started</span>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </div>
+      </button>
     </div>
   );
 }
