@@ -70,4 +70,4 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
       </button>
     </div>
   );
-}
+} 
