@@ -6,20 +6,23 @@ interface RoommateBannerProps {
   onNavigate: (page: PageType) => void;
 }
 
-const SEARCH_HINTS = [
-  'Try: "single room under 800"',
-  'Try: "shared room near campus"',
-  'Try: "Ayensu + self-contained"',
-  'Try: "quiet roommate + budget 600"',
+// "Data of people looking for roommates"
+const ROOMMATE_REQUESTS = [
+  "Sarah (Lvl 200) • Looking in Ayensu • Budget 800",
+  "Kwame • Needs roommate near Science • Shared",
+  "Jessica (Lvl 300) • Old Site • Quiet study env",
+  "Daniel • Casford Hall • Looking for non-smoker",
+  "Ama • Valco Hall • Budget 600 • Urgent",
 ];
 
 export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
-  const [hintIndex, setHintIndex] = useState(0);
+  const [requestIndex, setRequestIndex] = useState(0);
 
   useEffect(() => {
+    // Rotate every 3 seconds
     const id = window.setInterval(() => {
-      setHintIndex((prev) => (prev + 1) % SEARCH_HINTS.length);
-    }, 2600);
+      setRequestIndex((prev) => (prev + 1) % ROOMMATE_REQUESTS.length);
+    }, 3000);
 
     return () => window.clearInterval(id);
   }, []);
@@ -42,7 +45,6 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
         <div className="relative flex min-w-0 items-center gap-3 text-left">
           <div className="min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-              {/* Increased Font Size Here */}
               <span className="font-extrabold text-white text-xl sm:text-2xl">
                 Need a roommate?
               </span>
@@ -52,10 +54,11 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
               </span>
             </div>
 
-            {/* Rotating Hint */}
+            {/* Rotating Roommate Request Data */}
             <div className="mt-1 flex items-center gap-2">
-              <span className="truncate text-[11px] font-bold text-white/80 group-hover:text-white transition-colors">
-                {SEARCH_HINTS[hintIndex]}
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="truncate text-[11px] font-bold text-white/90 group-hover:text-white transition-colors">
+                {ROOMMATE_REQUESTS[requestIndex]}
               </span>
             </div>
           </div>
