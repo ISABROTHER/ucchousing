@@ -29,29 +29,29 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
       <button
         type="button"
         onClick={() => onNavigate("search")}
-        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-[#722F37] px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
+        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-amber-500 px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
         aria-label="Open roommate and smart search"
       >
         {/* Subtle Gradient/Shine Overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#722F37] to-[#85343d]" />
-        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500" />
+        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
 
         {/* Left Side: Text */}
         <div className="relative flex min-w-0 items-center gap-3 text-left">
           <div className="min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="font-extrabold text-white text-sm sm:text-base">
+              <span className="font-extrabold text-slate-900 text-sm sm:text-base">
                 Need a roommate?
               </span>
 
-              <span className="hidden text-xs font-semibold text-white/80 sm:inline-block">
+              <span className="hidden text-xs font-semibold text-slate-800/80 sm:inline-block">
                 Match by budget, lifestyle & location.
               </span>
             </div>
 
             {/* Rotating Hint */}
             <div className="mt-0.5 flex items-center gap-2">
-              <span className="truncate text-[11px] font-bold text-white/70 group-hover:text-white transition-colors">
+              <span className="truncate text-[11px] font-bold text-slate-900/70 group-hover:text-slate-900 transition-colors">
                 {SEARCH_HINTS[hintIndex]}
               </span>
             </div>
@@ -60,7 +60,7 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
 
         {/* Right Side: Action Button */}
         <div className="relative flex shrink-0 items-center gap-2 pl-4">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors group-hover:bg-white group-hover:text-[#722F37]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/10 px-3 py-1.5 text-xs font-bold text-slate-900 transition-colors group-hover:bg-slate-900 group-hover:text-white">
             Smart Search
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
