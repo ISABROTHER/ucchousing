@@ -1,5 +1,5 @@
 // src/pages/components/RoommateBanner.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { PageType } from "../../App";
 
@@ -16,13 +16,22 @@ const SEARCH_HINTS = [
 
 export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
   const [hintIndex, setHintIndex] = useState(0);
+  const [fadeIn, setFadeIn] = useState(true);
+
+  const hint = useMemo(() => SEARCH_HINTS[hintIndex], [hintIndex]);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setHintIndex((prev) => (prev + 1) % SEARCH_HINTS.length);
-    }, 2600);
+    const interval = window.setInterval(() => {
+      // fade out briefly, then swap and fade in
+      setFadeIn(false);
 
-    return () => window.clearInterval(id);
+      window.setTimeout(() => {
+        setHintIndex((prev) => (prev + 1) % SEARCH_HINTS.length);
+        setFadeIn(true);
+      }, 220);
+    }, 2800);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   return (
@@ -30,51 +39,85 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
       <button
         type="button"
         onClick={() => onNavigate("search")}
-        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-slate-900 px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
-        aria-label="Open roommate and smart search"
+        className="
+          group relative w-full overflow-hidden rounded-2xl
+          border border-slate-200/70 bg-white/80
+          px-4 py-4 shadow-sm backdrop-blur
+          transition-all duration-300
+          hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300/80
+          sm:px-6
+        "
+        aria-label="Find a roommate"
       >
-        {/* Subtle Background Gradients */}
-        <div className="absolute -left-4 -top-12 h-24 w-24 rounded-full bg-indigo-500/20 blur-xl" />
-        <div className="absolute -right-4 -bottom-12 h-24 w-24 rounded-full bg-emerald-500/20 blur-xl" />
+        {/* Premium ambient glow (soft, not rough) */}
+        <div className="pointer-events-none absolute -left-20 -top-16 h-44 w-44 rounded-full bg-indigo-500/10 blur-3xl transition-opacity duration-300 group-hover:opacity-100 opacity-70" />
+        <div className="pointer-events-none absolute -right-24 -bottom-20 h-52 w-52 rounded-full bg-emerald-500/10 blur-3xl transition-opacity duration-300 group-hover:opacity-100 opacity-70" />
 
-        {/* Shine Animation */}
-        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+        {/* Subtle sheen (very light) */}
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/70 to-transparent" />
+        </div>
 
-        {/* Left Side: Icon & Text */}
-        <div className="relative flex min-w-0 items-center gap-3 text-left">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-indigo-300">
-            <Sparkles className="h-4 w-4" />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="font-bold text-white text-sm sm:text-base">
-                Need a roommate?
-              </span>
-
-              {/* Smart, research-backed guidance (examples) */}
-              <span className="hidden text-xs font-medium text-slate-400 sm:inline-block">
-                Match by budget, lifestyle & location.
-              </span>
+        <div className="relative flex items-center justify-between gap-4">
+          {/* Left: tight, clear hierarchy */}
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm">
+              <Sparkles className="h-5 w-5" />
             </div>
 
-            {/* Thin-bar style “smart hint” (rotates, no layout change) */}
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
-                Smart search
-              </span>
-              <span className="truncate text-[11px] font-medium text-slate-400">
-                {SEARCH_HINTS[hintIndex]}
-              </span>
+            <div className="min-w-0">
+              {/* Line 1: title + trust badge (not scattered) */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-sm sm:text-base font-semibold text-slate-900">
+                  Find a roommate that fits.
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                  Smart match
+                </span>
+              </div>
+
+              {/* Line 2: single supportive line (clean) */}
+              <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
+                Match by budget, lifestyle & location — fast and stress-free.
+              </p>
+
+              {/* Line 3: “search hint” as one focused element */}
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="inline-flex h-5 items-center rounded-md bg-slate-100 px-2 text-[10px] font-semibold text-slate-700">
+                  Hint
+                </span>
+                <span
+                  className={[
+                    "truncate text-[11px] sm:text-xs font-medium text-slate-500 transition-all duration-200",
+                    fadeIn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-0.5",
+                  ].join(" ")}
+                >
+                  {hint}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: CTA (simple + premium micro motion) */}
+          <div className="shrink-0">
+            <div
+              className="
+                inline-flex items-center gap-2 rounded-full
+                bg-slate-900 px-4 py-2
+                text-xs sm:text-sm font-semibold text-white
+                shadow-sm transition-all duration-300
+                group-hover:bg-slate-800
+              "
+            >
+              <span>Get started</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </div>
           </div>
         </div>
 
-        {/* Right Side: Action */}
-        <div className="relative flex shrink-0 items-center gap-2 pl-4 text-xs font-bold text-white transition-colors group-hover:text-indigo-200 sm:text-sm">
-          <span>Get Started</span>
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </div>
+        {/* Bottom hairline (premium finishing) */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-200/70 to-transparent" />
       </button>
     </div>
   );
