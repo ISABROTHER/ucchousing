@@ -108,7 +108,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    // FIX: Added w-full and overflow-x-hidden to prevent horizontal scroll on Android
+    <div className="min-h-screen w-full overflow-x-hidden bg-white">
       <Navigation
         user={state.user}
         userProfile={state.userProfile}
@@ -116,7 +117,7 @@ function App() {
         currentPage={state.currentPage}
       />
 
-      <main className="pt-16">
+      <main className="pt-16 w-full">
         {state.currentPage === 'home' && (
           <HomePage onNavigate={handleNavigate} />
         )}
