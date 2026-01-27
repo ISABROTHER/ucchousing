@@ -6,13 +6,13 @@ interface RoommateBannerProps {
   onNavigate: (page: PageType) => void;
 }
 
-// "Data of people looking for roommates"
+// "Data of people looking for roommates" - Hostel names removed
 const ROOMMATE_REQUESTS = [
-  "Sarah (Lvl 200) • Looking in Ayensu • Budget 800",
-  "Kwame • Needs roommate near Science • Shared",
-  "Jessica (Lvl 300) • Old Site • Quiet study env",
-  "Daniel • Casford Hall • Looking for non-smoker",
-  "Ama • Valco Hall • Budget 600 • Urgent",
+  "Sarah (Lvl 200) • Budget 800 • Quiet & Neat",
+  "Kwame • Needs roommate • Shared preferences",
+  "Jessica (Lvl 300) • Serious student • Study focus",
+  "Daniel • Non-smoker • Morning person",
+  "Ama • Budget 600 • Urgent Request",
 ];
 
 export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
