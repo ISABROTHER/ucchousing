@@ -5,7 +5,10 @@
 @tailwind utilities;
 
 @layer base {
-  html {
+  /* SAFETY NET: Prevent horizontal scrolling/stretching on mobile */
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
