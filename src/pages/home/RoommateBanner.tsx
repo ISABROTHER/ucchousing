@@ -29,7 +29,7 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
       <button
         type="button"
         onClick={() => onNavigate("search")}
-        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-red-600 px-4 py-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
+        className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-red-600 px-4 py-4 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
         aria-label="Open roommate and smart search"
       >
         {/* Overlay: Gradient & Depth */}
@@ -42,7 +42,8 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
         <div className="relative flex min-w-0 items-center gap-3 text-left">
           <div className="min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="font-extrabold text-white text-sm sm:text-base">
+              {/* Increased Font Size Here */}
+              <span className="font-extrabold text-white text-xl sm:text-2xl">
                 Need a roommate?
               </span>
 
@@ -52,7 +53,7 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
             </div>
 
             {/* Rotating Hint */}
-            <div className="mt-0.5 flex items-center gap-2">
+            <div className="mt-1 flex items-center gap-2">
               <span className="truncate text-[11px] font-bold text-white/80 group-hover:text-white transition-colors">
                 {SEARCH_HINTS[hintIndex]}
               </span>
@@ -62,7 +63,7 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
 
         {/* Right Side: Action Button (White box, Red text, Search icon) */}
         <div className="relative flex shrink-0 items-center gap-2 pl-4">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-red-600 shadow-sm transition-transform group-hover:scale-105 active:scale-95">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-xs font-bold text-red-600 shadow-sm transition-transform group-hover:scale-105 active:scale-95">
             Smart Search
             <Search className="h-3.5 w-3.5" />
           </span>
