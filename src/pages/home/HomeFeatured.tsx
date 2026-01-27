@@ -29,19 +29,16 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   const [a, b, c, d, e] = safeImages;
 
   return (
-    // UPDATED DESIGN: 
-    // 1. bg-white (Clean background)
-    // 2. border-2 border-slate-200 (Thicker, visible gray border)
-    // 3. shadow-lg (Stronger shadow for lift)
-    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
+    // UPDATED DESIGN: Fluid width, safe overflow handling
+    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
       
       {/* 1. MOSAIC GRID IMAGES */}
       <button 
         onClick={onOpen} 
         className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
       >
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96">
-            {/* Large Left Image - Placeholder bg made darker (slate-200) for contrast */}
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96 w-full">
+            {/* Large Left Image */}
             <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
                 {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" />}
             </div>
@@ -67,24 +64,24 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
             </div>
         </div>
 
-        {/* Floating "See all photos" Button - Added border for pop */}
-        <div className="absolute bottom-4 right-4 z-10">
-            <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
-                <ImageIcon className="h-4 w-4" />
-                <span>See all photos</span>
+        {/* Floating "See all photos" Button */}
+        <div className="absolute bottom-4 right-4 z-10 max-w-[80%]">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105 whitespace-nowrap">
+                <ImageIcon className="h-4 w-4 shrink-0" />
+                <span className="truncate">See photos</span>
             </div>
         </div>
       </button>
 
       {/* 2. DETAILS BELOW (Title & Location) */}
-      <div className="px-2 pb-2">
-        <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors">
+      <div className="px-2 pb-2 min-w-0">
+        <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors break-words">
             {name}
         </h3>
         {location && (
-            <div className="mt-1 flex items-center gap-1.5 text-slate-500 text-sm font-medium">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                {location}
+            <div className="mt-1 flex items-center gap-1.5 text-slate-500 text-sm font-medium min-w-0">
+                <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                <span className="truncate">{location}</span>
             </div>
         )}
       </div>
@@ -148,7 +145,7 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
   useEffect(() => { void loadFeatured(); }, []);
 
   return (
-    <div className="mt-16 mx-auto max-w-5xl px-4">
+    <div className="mt-16 mx-auto max-w-5xl px-4 w-full">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Featured hostels</h2>
@@ -183,7 +180,7 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
            ))}
         </div>
       ) : featured.length > 0 ? (
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 gap-8 w-full">
           {featured.map((hostel) => (
             <FeaturedPhotoMosaicCard key={hostel.id} hostel={hostel} onOpen={() => onNavigate("detail", hostel.id)} />
           ))}
