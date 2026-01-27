@@ -1,4 +1,3 @@
-// src/pages/components/RoommateBanner.tsx
 import { useEffect, useState } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { PageType } from "../../App";
