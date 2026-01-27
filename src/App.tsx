@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import Navigation from './components/Navigation';
+import MobileScaler from './components/MobileScaler'; // Import the scaler
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import HostelDetailPage from './pages/HostelDetailPage';
@@ -70,7 +71,7 @@ function App() {
         await fetchUserProfile(data.user.id);
       }
     } catch {
-      // Silent fail, user can sign in manually
+      // Silent fail
     }
   }
 
@@ -108,52 +109,54 @@ function App() {
   }
 
   return (
-    // FIX: Added w-full and overflow-x-hidden to prevent horizontal scroll on Android
-    <div className="min-h-screen w-full overflow-x-hidden bg-white">
-      <Navigation
-        user={state.user}
-        userProfile={state.userProfile}
-        onNavigate={handleNavigate}
-        currentPage={state.currentPage}
-      />
+    // We apply the MobileScaler here to wrap the entire visible application
+    <MobileScaler>
+      <div className="min-h-screen w-full bg-white">
+        <Navigation
+          user={state.user}
+          userProfile={state.userProfile}
+          onNavigate={handleNavigate}
+          currentPage={state.currentPage}
+        />
 
-      <main className="pt-16 w-full">
-        {state.currentPage === 'home' && (
-          <HomePage onNavigate={handleNavigate} />
-        )}
-        {state.currentPage === 'search' && (
-          <SearchPage onNavigate={handleNavigate} />
-        )}
-        {state.currentPage === 'detail' && state.selectedHostelId && (
-          <HostelDetailPage
-            hostelId={state.selectedHostelId}
-            user={state.user}
-            userProfile={state.userProfile}
-            onNavigate={handleNavigate}
-          />
-        )}
-        {state.currentPage === 'auth' && (
-          <AuthPage onNavigate={handleNavigate} />
-        )}
-        {state.currentPage === 'booking' && state.selectedHostelId && (
-          <BookingPage
-            hostelId={state.selectedHostelId}
-            user={state.user}
-            onNavigate={handleNavigate}
-          />
-        )}
-        {state.currentPage === 'dashboard' && state.user && (
-          <DashboardPage
-            user={state.user}
-            userProfile={state.userProfile}
-            onNavigate={handleNavigate}
-          />
-        )}
-        {state.currentPage === 'my-bookings' && state.user && (
-          <MyBookingsPage onNavigate={handleNavigate} />
-        )}
-      </main>
-    </div>
+        <main className="pt-16 w-full">
+          {state.currentPage === 'home' && (
+            <HomePage onNavigate={handleNavigate} />
+          )}
+          {state.currentPage === 'search' && (
+            <SearchPage onNavigate={handleNavigate} />
+          )}
+          {state.currentPage === 'detail' && state.selectedHostelId && (
+            <HostelDetailPage
+              hostelId={state.selectedHostelId}
+              user={state.user}
+              userProfile={state.userProfile}
+              onNavigate={handleNavigate}
+            />
+          )}
+          {state.currentPage === 'auth' && (
+            <AuthPage onNavigate={handleNavigate} />
+          )}
+          {state.currentPage === 'booking' && state.selectedHostelId && (
+            <BookingPage
+              hostelId={state.selectedHostelId}
+              user={state.user}
+              onNavigate={handleNavigate}
+            />
+          )}
+          {state.currentPage === 'dashboard' && state.user && (
+            <DashboardPage
+              user={state.user}
+              userProfile={state.userProfile}
+              onNavigate={handleNavigate}
+            />
+          )}
+          {state.currentPage === 'my-bookings' && state.user && (
+            <MyBookingsPage onNavigate={handleNavigate} />
+          )}
+        </main>
+      </div>
+    </MobileScaler>
   );
 }
 
