@@ -11,17 +11,10 @@ interface HomePageProps {
 export default function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-20">
-      {/* 1. Hero Section: Main entrance and headline */}
       <HomeHero />
-      
-      {/* 2. Categories: Quick filtering by location (New Site, Old Site, etc.) */}
-      <HomeCategories onNavigate={onNavigate} />
-      
-      {/* 3. Featured: Showcasing specific high-quality hostels */}
-      <HomeFeatured onNavigate={onNavigate} />
-
-      {/* 4. Roommate Banner: Moved to bottom as a supplementary search feature */}
       <RoommateBanner onNavigate={onNavigate} />
+      <HomeCategories onNavigate={onNavigate} />
+      <HomeFeatured onNavigate={onNavigate} />
     </div>
   );
-}
+} 
