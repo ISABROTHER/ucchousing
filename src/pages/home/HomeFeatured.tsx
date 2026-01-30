@@ -20,61 +20,55 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   const location = getStringField(hostel, "location") || getStringField(hostel, "address");
   const images = getImageUrls(hostel);
   
-  // Ensure we have at least 5 images for the full mosaic, or repeat the last one to fill layout
+  // Ensure we have 4 images for the "1 Top + 3 Bottom" layout
   const safeImages = [...images];
-  while (safeImages.length < 5 && safeImages.length > 0) {
-      // If we run out of images, repeat the first few to fill the aesthetic grid
+  while (safeImages.length < 4 && safeImages.length > 0) {
       safeImages.push(safeImages[safeImages.length % safeImages.length]);
   }
   
-  const [a, b, c, d, e] = safeImages;
+  const [a, b, c, d] = safeImages;
 
   return (
-    // UPDATED DESIGN: Fluid width, safe overflow handling
+    // UPDATED DESIGN: Card container
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
       
-      {/* 1. MOSAIC GRID IMAGES */}
+      {/* 1. LAYOUT: HERO TOP + 3 BOTTOM */}
       <button 
         onClick={onOpen} 
         className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
       >
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96 w-full">
-            {/* Large Left Image - MAIN FEATURE */}
-            <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
-                {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" />}
+        <div className="flex flex-col gap-2 w-full">
+            {/* Top: Main Hero Image (Shows Much!) */}
+            <div className="w-full h-64 sm:h-72 relative overflow-hidden bg-slate-200 rounded-xl">
+                {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main View" />}
             </div>
 
-            {/* Top Right 1 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-                {b && <img src={b} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 1" />}
-            </div>
-
-            {/* Top Right 2 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-                {c && <img src={c} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 2" />}
-            </div>
-
-             {/* Bottom Right 1 */}
-             <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-                {d && <img src={d} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 3" />}
-            </div>
-
-            {/* Bottom Right 2 */}
-            <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-                {e && <img src={e} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 4" />}
+            {/* Bottom: Row of 3 smaller images */}
+            <div className="grid grid-cols-3 gap-2 h-24 sm:h-32">
+                <div className="relative overflow-hidden bg-slate-200 rounded-lg">
+                    {b && <img src={b} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 1" />}
+                </div>
+                <div className="relative overflow-hidden bg-slate-200 rounded-lg">
+                    {c && <img src={c} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 2" />}
+                </div>
+                <div className="relative overflow-hidden bg-slate-200 rounded-lg">
+                    {d && <img src={d} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 3" />}
+                    
+                    {/* Overlay for "More" if there are > 4 images, effectively handled by the button overall but we can add a subtle gradient here if we wanted. */}
+                </div>
             </div>
         </div>
 
-        {/* Floating "See all photos" Button */}
+        {/* Floating "See photos" Button */}
         <div className="absolute bottom-4 right-4 z-10 max-w-[80%]">
-            <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105 whitespace-nowrap">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105 whitespace-nowrap">
                 <ImageIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">See photos</span>
             </div>
         </div>
       </button>
 
-      {/* 2. DETAILS BELOW (Title & Location) */}
+      {/* 2. DETAILS BELOW */}
       <div className="px-2 pb-2 min-w-0">
         <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors break-words">
             {name}
@@ -112,14 +106,13 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
           id: "nana-agyoma-manual",
           name: "Nana Agyoma Hostel",
           address: "Amamoma, UCC", location: "Amamoma",
-          // The main image here will be used if 'images' is empty, but we prioritize the array below
+          // Prioritize the user's specific image order
           main_image: "https://i.imgur.com/luYRCIq.jpeg",
           images: [
-            "https://i.imgur.com/luYRCIq.jpeg", // 1. Main Large Image (Left side)
-            "https://i.imgur.com/peh4mP5.jpeg", // 2. Top Right
-            "https://i.imgur.com/CKdT7Di.jpeg", // 3. Top Far Right
+            "https://i.imgur.com/luYRCIq.jpeg", // 1. Main (Big Top)
+            "https://i.imgur.com/peh4mP5.jpeg", // 2. Bottom Left
+            "https://i.imgur.com/CKdT7Di.jpeg", // 3. Bottom Center
             "https://i.imgur.com/Ci2Vn7D.jpeg", // 4. Bottom Right
-            "https://i.imgur.com/peh4mP5.jpeg", // 5. Bottom Far Right (Repeated #2 to fill grid nicely)
           ],
         },
         {
