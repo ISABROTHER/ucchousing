@@ -159,19 +159,7 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
             "https://i.imgur.com/Ci2Vn7D.jpeg",
           ],
         },
-        {
-          id: "success-city-manual",
-          name: "Success City Hostel",
-          address: "Kwakyerkrom, UCC", location: "Kwakyerkrom",
-          main_image: "https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=1200&auto=format&fit=crop",
-          images: [
-            "https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1560067174-8943bd8f2662?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=1200&auto=format&fit=crop",
-          ],
-        },
+        // REMOVED Success City Hostel as requested
         {
           id: "adoration-home-plus-manual",
           name: "Adoration Home Plus Hostel",
