@@ -29,30 +29,24 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   // State: Which image is currently displayed in the main hero slot?
   const [activeMain, setActiveMain] = useState(safeImages[0]);
 
-  // Update state if the hostel data changes
   useEffect(() => {
     if (safeImages[0]) setActiveMain(safeImages[0]);
   }, [hostel.id]);
 
-  // For the thumbnail strip, we use all images
-  // We identify the active index for the counter
   const activeIndex = safeImages.indexOf(activeMain);
   const totalImages = safeImages.length;
 
   return (
-    // UPDATED DESIGN: 
-    // 1. bg-slate-50 (Light grey background to differentiate from white page)
-    // 2. hover:bg-white (Interactive feel)
-    // 3. border-slate-200 (Subtle classification border)
-    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-slate-50 p-4 shadow-lg shadow-slate-200/50 transition-all duration-300 hover:border-emerald-300 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
+    // UPDATED DESIGN: Full Bleed + Distinct Background
+    <div className="group/card flex flex-col rounded-[2rem] border-2 border-slate-100 bg-slate-50 shadow-lg shadow-slate-200/50 transition-all duration-300 hover:border-emerald-300 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full overflow-hidden">
       
-      {/* 1. INTERACTIVE GALLERY */}
-      <div className="flex flex-col gap-2 w-full">
+      {/* 1. INTERACTIVE GALLERY (Full Width / No Padding) */}
+      <div className="flex flex-col gap-1 w-full">
           
           {/* TOP: Main Hero Image */}
           <button 
             onClick={onOpen}
-            className="w-full h-64 sm:h-72 relative overflow-hidden bg-white rounded-xl cursor-pointer focus:outline-none focus:ring-4 focus:ring-emerald-500/20 group/image"
+            className="w-full h-64 sm:h-80 relative bg-slate-200 cursor-pointer focus:outline-none group/image"
           >
               {activeMain && (
                 <img 
@@ -62,7 +56,7 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
                 />
               )}
               
-              {/* FEATURE: Photo Counter Badge (Mobile Friendly Indicator) */}
+              {/* Photo Counter */}
               <div className="absolute top-4 left-4 z-10">
                  <div className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-white shadow-sm border border-white/10">
                     <Camera className="h-3 w-3" />
@@ -70,7 +64,7 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
                  </div>
               </div>
 
-              {/* Floating "See photos" Badge */}
+              {/* See photos Badge */}
               <div className="absolute bottom-4 right-4 z-10 max-w-[80%]">
                   <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105 whitespace-nowrap">
                       <ImageIcon className="h-4 w-4 shrink-0" />
@@ -79,8 +73,8 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
               </div>
           </button>
 
-          {/* BOTTOM: Scrollable Thumbnails Strip (Native App Feel on Mobile) */}
-          <div className="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 gap-2 h-20 sm:h-24 scrollbar-hide snap-x">
+          {/* BOTTOM: Scrollable Thumbnails Strip */}
+          <div className="flex overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-4 sm:px-1 gap-1 h-20 sm:h-24 scrollbar-hide snap-x bg-slate-50">
               {safeImages.map((thumb, idx) => {
                   const isActive = activeMain === thumb;
                   if (idx > 3) return <div key={idx} className="hidden sm:block"></div>; 
@@ -93,8 +87,8 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
                         setActiveMain(thumb);
                       }}
                       className={`
-                        relative flex-shrink-0 w-24 sm:w-auto h-full overflow-hidden rounded-lg cursor-pointer transition-all snap-start
-                        ${isActive ? 'ring-2 ring-emerald-500 ring-offset-2 opacity-100' : 'opacity-70 hover:opacity-100'}
+                        relative flex-shrink-0 w-24 sm:w-auto h-full overflow-hidden rounded-md cursor-pointer transition-all snap-start
+                        ${isActive ? 'ring-2 ring-emerald-500 z-10' : 'opacity-80 hover:opacity-100'}
                       `}
                     >
                       <img 
@@ -112,17 +106,24 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
       {/* 2. DETAILS BELOW */}
       <button 
         onClick={onOpen}
-        className="px-2 pb-2 min-w-0 text-left focus:outline-none"
+        className="p-5 pt-3 text-left focus:outline-none w-full"
       >
-        <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors break-words">
-            {name}
-        </h3>
-        {location && (
-            <div className="mt-1 flex items-center gap-1.5 text-slate-500 text-sm font-medium min-w-0">
-                <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
-                <span className="truncate">{location}</span>
+        <div className="flex justify-between items-start gap-2">
+            <div>
+                <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors break-words">
+                    {name}
+                </h3>
+                {location && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-slate-500 text-sm font-medium">
+                        <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="truncate">{location}</span>
+                    </div>
+                )}
             </div>
-        )}
+            <div className="h-8 w-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover/card:text-emerald-500 group-hover/card:border-emerald-200 transition-colors shrink-0">
+                <ArrowRight className="h-4 w-4" />
+            </div>
+        </div>
       </button>
     </div>
   );
@@ -150,13 +151,12 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
           id: "nana-agyoma-manual",
           name: "Nana Agyoma Hostel",
           address: "Amamoma, UCC", location: "Amamoma",
-          // Prioritize the user's specific image order
           main_image: "https://i.imgur.com/luYRCIq.jpeg",
           images: [
-            "https://i.imgur.com/luYRCIq.jpeg", // 1. Main (Big Top)
-            "https://i.imgur.com/peh4mP5.jpeg", // 2. Bottom Left
-            "https://i.imgur.com/CKdT7Di.jpeg", // 3. Bottom Center
-            "https://i.imgur.com/Ci2Vn7D.jpeg", // 4. Bottom Right
+            "https://i.imgur.com/luYRCIq.jpeg",
+            "https://i.imgur.com/peh4mP5.jpeg",
+            "https://i.imgur.com/CKdT7Di.jpeg",
+            "https://i.imgur.com/Ci2Vn7D.jpeg",
           ],
         },
         {
@@ -170,6 +170,18 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
             "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?q=80&w=1200&auto=format&fit=crop",
             "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200&auto=format&fit=crop",
             "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=1200&auto=format&fit=crop",
+          ],
+        },
+        {
+          id: "adoration-home-plus-manual",
+          name: "Adoration Home Plus Hostel",
+          address: "Ayensu, UCC", location: "Ayensu",
+          main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+          images: [
+            "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+            "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg",
+            "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png",
+            "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", // Repeated to fill the layout
           ],
         }
       ];
