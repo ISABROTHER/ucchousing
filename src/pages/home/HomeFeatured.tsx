@@ -111,13 +111,12 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
           id: "nana-agyoma-manual",
           name: "Nana Agyoma Hostel",
           address: "Amamoma, UCC", location: "Amamoma",
-          main_image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop",
+          main_image: "https://i.imgur.com/luYRCIq.jpeg",
           images: [
-            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1549187774-b4e9b0445b41?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200&auto=format&fit=crop",
+            "https://i.imgur.com/luYRCIq.jpeg",
+            "https://i.imgur.com/peh4mP5.jpeg",
+            "https://i.imgur.com/CKdT7Di.jpeg",
+            "https://i.imgur.com/Ci2Vn7D.jpeg",
           ],
         },
         {
