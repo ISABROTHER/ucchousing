@@ -40,7 +40,11 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   const totalImages = safeImages.length;
 
   return (
-    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
+    // UPDATED DESIGN: 
+    // 1. bg-slate-50 (Light grey background to differentiate from white page)
+    // 2. hover:bg-white (Interactive feel)
+    // 3. border-slate-200 (Subtle classification border)
+    <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-slate-50 p-4 shadow-lg shadow-slate-200/50 transition-all duration-300 hover:border-emerald-300 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
       
       {/* 1. INTERACTIVE GALLERY */}
       <div className="flex flex-col gap-2 w-full">
@@ -48,7 +52,7 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
           {/* TOP: Main Hero Image */}
           <button 
             onClick={onOpen}
-            className="w-full h-64 sm:h-72 relative overflow-hidden bg-slate-200 rounded-xl cursor-pointer focus:outline-none focus:ring-4 focus:ring-emerald-500/20 group/image"
+            className="w-full h-64 sm:h-72 relative overflow-hidden bg-white rounded-xl cursor-pointer focus:outline-none focus:ring-4 focus:ring-emerald-500/20 group/image"
           >
               {activeMain && (
                 <img 
@@ -76,13 +80,10 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
           </button>
 
           {/* BOTTOM: Scrollable Thumbnails Strip (Native App Feel on Mobile) */}
-          {/* On mobile: flex-row + overflow-auto (horizontal scroll) */}
-          {/* On desktop: grid (clean layout) */}
           <div className="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 gap-2 h-20 sm:h-24 scrollbar-hide snap-x">
               {safeImages.map((thumb, idx) => {
                   const isActive = activeMain === thumb;
-                  // We only show first 4 on desktop grid to maintain layout, but all on mobile scroll
-                  if (idx > 3) return <div key={idx} className="hidden sm:block"></div>; // Hide extra on desktop grid if strictly keeping 4 slots
+                  if (idx > 3) return <div key={idx} className="hidden sm:block"></div>; 
                   
                   return (
                     <button
@@ -101,7 +102,6 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
                         className="h-full w-full object-cover" 
                         alt={`View ${idx + 1}`} 
                       />
-                      {/* Active Overlay for clear visibility */}
                       {isActive && <div className="absolute inset-0 bg-emerald-500/10 mix-blend-overlay" />}
                     </button>
                   );
