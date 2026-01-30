@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Star, AlertTriangle, Image as ImageIcon, MapPin } from "lucide-react";
+import { ArrowRight, Star, AlertTriangle, Image as ImageIcon, MapPin, Camera } from "lucide-react";
 import { getFeaturedHostels } from "../../lib/hostels";
 import { PageType } from "../../App";
 
@@ -27,16 +27,17 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   }
   
   // State: Which image is currently displayed in the main hero slot?
-  // Default to the first image in the list.
   const [activeMain, setActiveMain] = useState(safeImages[0]);
 
-  // Update state if the hostel data changes (e.g. recycling components)
+  // Update state if the hostel data changes
   useEffect(() => {
     if (safeImages[0]) setActiveMain(safeImages[0]);
   }, [hostel.id]);
 
-  // The 3 thumbnails below the main image
-  const thumbnails = safeImages.slice(1, 4);
+  // For the thumbnail strip, we use all images
+  // We identify the active index for the counter
+  const activeIndex = safeImages.indexOf(activeMain);
+  const totalImages = safeImages.length;
 
   return (
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 w-full max-w-full">
@@ -44,7 +45,7 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
       {/* 1. INTERACTIVE GALLERY */}
       <div className="flex flex-col gap-2 w-full">
           
-          {/* TOP: Main Hero Image (Clicking this opens the details page) */}
+          {/* TOP: Main Hero Image */}
           <button 
             onClick={onOpen}
             className="w-full h-64 sm:h-72 relative overflow-hidden bg-slate-200 rounded-xl cursor-pointer focus:outline-none focus:ring-4 focus:ring-emerald-500/20 group/image"
@@ -57,6 +58,14 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
                 />
               )}
               
+              {/* FEATURE: Photo Counter Badge (Mobile Friendly Indicator) */}
+              <div className="absolute top-4 left-4 z-10">
+                 <div className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-white shadow-sm border border-white/10">
+                    <Camera className="h-3 w-3" />
+                    <span>{activeIndex + 1} / {totalImages}</span>
+                 </div>
+              </div>
+
               {/* Floating "See photos" Badge */}
               <div className="absolute bottom-4 right-4 z-10 max-w-[80%]">
                   <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105 whitespace-nowrap">
@@ -66,28 +75,41 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
               </div>
           </button>
 
-          {/* BOTTOM: 3 Clickable Thumbnails (Clicking these changes the Main Image) */}
-          <div className="grid grid-cols-3 gap-2 h-24 sm:h-32">
-              {thumbnails.map((thumb, idx) => (
-                <button
-                  key={`${hostel.id}-thumb-${idx}`}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Don't trigger the parent click
-                    setActiveMain(thumb); // Update the main image
-                  }}
-                  className={`relative overflow-hidden bg-slate-200 rounded-lg cursor-pointer transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${activeMain === thumb ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}
-                >
-                  <img 
-                    src={thumb} 
-                    className="h-full w-full object-cover" 
-                    alt={`View ${idx + 1}`} 
-                  />
-                </button>
-              ))}
+          {/* BOTTOM: Scrollable Thumbnails Strip (Native App Feel on Mobile) */}
+          {/* On mobile: flex-row + overflow-auto (horizontal scroll) */}
+          {/* On desktop: grid (clean layout) */}
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 gap-2 h-20 sm:h-24 scrollbar-hide snap-x">
+              {safeImages.map((thumb, idx) => {
+                  const isActive = activeMain === thumb;
+                  // We only show first 4 on desktop grid to maintain layout, but all on mobile scroll
+                  if (idx > 3) return <div key={idx} className="hidden sm:block"></div>; // Hide extra on desktop grid if strictly keeping 4 slots
+                  
+                  return (
+                    <button
+                      key={`${hostel.id}-thumb-${idx}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMain(thumb);
+                      }}
+                      className={`
+                        relative flex-shrink-0 w-24 sm:w-auto h-full overflow-hidden rounded-lg cursor-pointer transition-all snap-start
+                        ${isActive ? 'ring-2 ring-emerald-500 ring-offset-2 opacity-100' : 'opacity-70 hover:opacity-100'}
+                      `}
+                    >
+                      <img 
+                        src={thumb} 
+                        className="h-full w-full object-cover" 
+                        alt={`View ${idx + 1}`} 
+                      />
+                      {/* Active Overlay for clear visibility */}
+                      {isActive && <div className="absolute inset-0 bg-emerald-500/10 mix-blend-overlay" />}
+                    </button>
+                  );
+              })}
           </div>
       </div>
 
-      {/* 2. DETAILS BELOW (Title & Location) - Clicking opens details */}
+      {/* 2. DETAILS BELOW */}
       <button 
         onClick={onOpen}
         className="px-2 pb-2 min-w-0 text-left focus:outline-none"
