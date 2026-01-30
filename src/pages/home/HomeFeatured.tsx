@@ -23,7 +23,8 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
   // Ensure we have at least 5 images for the full mosaic, or repeat the last one to fill layout
   const safeImages = [...images];
   while (safeImages.length < 5 && safeImages.length > 0) {
-      safeImages.push(safeImages[0]);
+      // If we run out of images, repeat the first few to fill the aesthetic grid
+      safeImages.push(safeImages[safeImages.length % safeImages.length]);
   }
   
   const [a, b, c, d, e] = safeImages;
@@ -38,7 +39,7 @@ function FeaturedPhotoMosaicCard({ hostel, onOpen }: { hostel: any; onOpen: () =
         className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
       >
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96 w-full">
-            {/* Large Left Image */}
+            {/* Large Left Image - MAIN FEATURE */}
             <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
                 {a && <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" />}
             </div>
@@ -111,12 +112,14 @@ export default function HomeFeatured({ onNavigate }: HomeFeaturedProps) {
           id: "nana-agyoma-manual",
           name: "Nana Agyoma Hostel",
           address: "Amamoma, UCC", location: "Amamoma",
+          // The main image here will be used if 'images' is empty, but we prioritize the array below
           main_image: "https://i.imgur.com/luYRCIq.jpeg",
           images: [
-            "https://i.imgur.com/luYRCIq.jpeg",
-            "https://i.imgur.com/peh4mP5.jpeg",
-            "https://i.imgur.com/CKdT7Di.jpeg",
-            "https://i.imgur.com/Ci2Vn7D.jpeg",
+            "https://i.imgur.com/luYRCIq.jpeg", // 1. Main Large Image (Left side)
+            "https://i.imgur.com/peh4mP5.jpeg", // 2. Top Right
+            "https://i.imgur.com/CKdT7Di.jpeg", // 3. Top Far Right
+            "https://i.imgur.com/Ci2Vn7D.jpeg", // 4. Bottom Right
+            "https://i.imgur.com/peh4mP5.jpeg", // 5. Bottom Far Right (Repeated #2 to fill grid nicely)
           ],
         },
         {
