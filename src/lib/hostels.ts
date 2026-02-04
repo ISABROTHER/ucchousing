@@ -1,353 +1,284 @@
-import { supabase } from './supabase';
+// ----------------------------------------------------------------------
+// LAYER 1: ALGORITHMS & DOMAIN LOGIC
+// ----------------------------------------------------------------------
 
-export interface Hostel {
+export type PriceUnit = "month" | "semester" | "year" | "day" | "unknown";
+
+export type IndexedHostel = {
   id: string;
-  owner_id: string;
+  hostel: any;
   name: string;
-  description: string;
   location: string;
-  city: string;
-  country: string;
-  price_per_night: number;
-  room_type: 'dorm' | 'private' | 'mixed';
-  beds_available: number;
-  verified: boolean;
-  rating: number;
-  review_count: number;
-  created_at: string;
-  updated_at: string;
-}
+  address: string;
+  nameN: string;
+  locationN: string;
+  addressN: string;
+  featuresN: string;
+  roomTypeN: string;
+  amenityN: string;
+  imgCount: number;
+  hasImages: number;
+  price: number | null;
+  priceUnit: PriceUnit;
+  hasPrice: number;
+  nearCampus: boolean;
+};
 
-export interface HostelWithDetails extends Hostel {
-  images: Array<{ id: string; image_url: string; display_order: number }>;
-  amenities: Array<{ id: string; name: string; icon: string }>;
-}
-
-// --- MANUAL DATA REPOSITORY ---
-const MANUAL_HOSTELS_DATA: any[] = [
-  {
-    id: "nana-agyoma-manual",
-    name: "Nana Agyoma Hostel",
-    address: "Amamoma, UCC",
-    location: "Amamoma",
-    city: "Cape Coast",
-    country: "Ghana",
-    price_per_night: 200, 
-    room_type: "mixed",
-    beds_available: 14,
-    verified: true,
-    rating: 4.5,
-    review_count: 24,
-    description: "Nana Agyoma Hostel provides a comfortable and secure environment for students. Located in Amamoma, it is just a short walk from the UCC campus. We offer spacious rooms, reliable water supply, and a dedicated study area.",
-    owner_id: "manual-owner",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    images: [
-      { id: "img1", image_url: "https://i.imgur.com/luYRCIq.jpeg", display_order: 1 },
-      { id: "img2", image_url: "https://i.imgur.com/peh4mP5.jpeg", display_order: 2 },
-      { id: "img3", image_url: "https://i.imgur.com/CKdT7Di.jpeg", display_order: 3 },
-      { id: "img4", image_url: "https://i.imgur.com/Ci2Vn7D.jpeg", display_order: 4 },
-    ],
-    amenities: [
-      { id: "a1", name: "Wi-Fi", icon: "wifi" },
-      { id: "a2", name: "Water Supply", icon: "droplet" },
-      { id: "a3", name: "Security", icon: "shield" },
-      { id: "a4", name: "Study Room", icon: "book" }
-    ]
+// --- Text Processing ---
+export const TextUtils = {
+  normalize(s: string): string {
+    return (s || "")
+      .toLowerCase()
+      .replace(/[’']/g, "'")
+      .replace(/[^a-z0-9\s.-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   },
-  {
-    id: "adoration-home-plus-manual",
-    name: "Adoration Home Plus Hostel",
-    address: "Ayensu, UCC",
-    location: "Ayensu",
-    city: "Cape Coast",
-    country: "Ghana",
-    price_per_night: 180,
-    room_type: "mixed",
-    beds_available: 5,
-    verified: true,
-    rating: 4.2,
-    review_count: 15,
-    description: "Adoration Home Plus offers a serene atmosphere perfect for academic excellence. Located in Ayensu, we prioritize your comfort and safety with 24/7 security and modern facilities.",
-    owner_id: "manual-owner",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    images: [
-      { id: "img1", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", display_order: 1 },
-      { id: "img2", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg", display_order: 2 },
-      { id: "img3", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png", display_order: 3 },
-      { id: "img4", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", display_order: 4 }, // Added repeat to fill grid
-    ],
-    amenities: [
-      { id: "a1", name: "Generator", icon: "zap" },
-      { id: "a2", name: "Gated", icon: "lock" },
-      { id: "a3", name: "Kitchen", icon: "coffee" }
-    ]
+
+  tokenize(s: string): string[] {
+    const n = this.normalize(s);
+    if (!n) return [];
+    return n.split(" ").filter(Boolean);
   },
-];
 
-function validateString(value: any, fieldName: string, maxLength = 500): string {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new Error(`${fieldName} must be a non-empty string`);
-  }
-  if (value.length > maxLength) {
-    throw new Error(`${fieldName} exceeds maximum length of ${maxLength}`);
-  }
-  return value.trim();
-}
+  getStringField(obj: any, key: string) {
+    return typeof obj?.[key] === "string" ? obj[key] : undefined;
+  },
 
-function validateNumber(value: any, fieldName: string, min = 0, max = Infinity): number {
-  const num = Number(value);
-  if (isNaN(num) || num < min || num > max) {
-    throw new Error(`${fieldName} must be a number between ${min} and ${max}`);
-  }
-  return num;
-}
-
-function validateRoomType(value: any): 'dorm' | 'private' | 'mixed' {
-  if (!['dorm', 'private', 'mixed'].includes(value)) {
-    throw new Error('Invalid room type. Must be dorm, private, or mixed');
-  }
-  return value;
-}
-
-// --- UPDATED: getHostels now merges manual data ---
-export async function getAllHostelsRepository() {
-    const { data, error } = await supabase
-        .from('hostels')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error("Repository fetch error:", error);
+  toText(v: any): string {
+    if (typeof v === "string") return v;
+    if (typeof v === "number") return String(v);
+    if (Array.isArray(v)) return v.map(this.toText.bind(this)).join(" ");
+    if (v && typeof v === "object") {
+      const vals = Object.values(v);
+      return vals.slice(0, 30).map(this.toText.bind(this)).join(" ");
     }
-    
-    const list = Array.isArray(data) ? [...data] : [];
+    return "";
+  },
+};
 
-    // Merge manual hostels ensuring no duplicates
-    const existingIds = new Set(list.map((h: any) => h.id));
-    MANUAL_HOSTELS_DATA.forEach((m) => {
-        if (!existingIds.has(m.id)) {
-            list.push(m);
-        }
-    });
+// --- Fuzzy Search Algorithm ---
+export const SearchAlgo = {
+  editDistance(a: string, b: string): number {
+    const s = a || "";
+    const t = b || "";
+    const m = s.length;
+    const n = t.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
 
-    return list;
-}
+    const dp = new Array(n + 1).fill(0);
+    for (let j = 0; j <= n; j++) dp[j] = j;
 
-// Kept for backward compatibility if used elsewhere
-export async function getHostels(filters?: {
-  city?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  roomType?: string;
-}) {
-  let query = supabase
-    .from('hostels')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (filters?.city) {
-    const city = validateString(filters.city, 'City', 100);
-    query = query.ilike('city', `%${city}%`);
-  }
-
-  if (filters?.minPrice !== undefined) {
-    const minPrice = validateNumber(filters.minPrice, 'Minimum price', 0, 100000);
-    query = query.gte('price_per_night', minPrice);
-  }
-
-  if (filters?.maxPrice !== undefined) {
-    const maxPrice = validateNumber(filters.maxPrice, 'Maximum price', 0, 100000);
-    query = query.lte('price_per_night', maxPrice);
-  }
-
-  if (filters?.roomType) {
-    validateRoomType(filters.roomType);
-    query = query.eq('room_type', filters.roomType);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error('Failed to fetch hostels');
-  }
-
-  const list = data || [];
-  
-  // Simple merge for manual data
-  const existingIds = new Set(list.map((h: any) => h.id));
-  MANUAL_HOSTELS_DATA.forEach((m) => {
-      if (!existingIds.has(m.id)) {
-          list.push(m);
+    for (let i = 1; i <= m; i++) {
+      let prev = dp[0];
+      dp[0] = i;
+      for (let j = 1; j <= n; j++) {
+        const tmp = dp[j];
+        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+        dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + cost);
+        prev = tmp;
       }
-  });
+    }
+    return dp[n];
+  },
 
-  return list;
-}
+  score(hay: string, queryTokens: string[]): number {
+    if (!queryTokens.length) return 0;
+    const hTokens = TextUtils.tokenize(hay);
+    if (!hTokens.length) return 0;
 
-// --- UPDATED: getHostelById checks manual data first ---
-export async function getHostelById(id: string): Promise<HostelWithDetails | null> {
-  if (!id || typeof id !== 'string') {
-    throw new Error('Invalid hostel ID');
-  }
+    let hits = 0;
+    for (const q of queryTokens) {
+      if (q.length <= 1) continue;
+      const direct = hTokens.some((w) => w.includes(q) || q.includes(w));
+      if (direct) {
+        hits += 1;
+        continue;
+      }
+      if (q.length >= 2 && q.length <= 10) {
+        const close = hTokens.some((w) => {
+          if (w.length < 2 || w.length > 14) return false;
+          const d = this.editDistance(w, q);
+          return d <= (q.length <= 4 ? 1 : 2);
+        });
+        if (close) hits += 1;
+      }
+    }
+    const ratio = hits / Math.max(1, queryTokens.length);
+    return Math.round(Math.max(0, Math.min(100, ratio * 100)));
+  },
+};
 
-  // 1. Check Manual Data
-  const manualHostel = MANUAL_HOSTELS_DATA.find(h => h.id === id);
-  if (manualHostel) {
-    return manualHostel as HostelWithDetails;
-  }
+// --- Intent Parsing ---
+export const IntentParser = {
+  AMENITY_SYNONYMS: {
+    wifi: ["wifi", "wi-fi", "internet", "wireless", "hotspot"],
+    water: ["water", "running water", "pipe borne", "pipe-borne"],
+    security: ["security", "guard", "security man", "watchman", "gated", "secure"],
+    cctv: ["cctv", "camera", "surveillance"],
+    generator: ["generator", "backup", "power backup", "light backup", "inverter"],
+    kitchen: ["kitchen", "shared kitchen", "kitchenette", "cooking"],
+    laundry: ["laundry", "washing", "washing area", "washing machine"],
+    ac: ["ac", "aircon", "air con", "air-condition", "air conditioning"],
+  } as Record<string, string[]>,
 
-  // 2. Check Database
-  const { data: hostel, error: hostelError } = await supabase
-    .from('hostels')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  parse(raw: string) {
+    const q = TextUtils.normalize(raw);
+    const tokens = TextUtils.tokenize(q);
 
-  if (hostelError) {
-    // If it's a UUID error (e.g. searching for a manual ID in DB), just return null
-    if (hostelError.code === '22P02') return null;
-    throw new Error('Failed to fetch hostel');
-  }
+    const intent = {
+      queryTokens: tokens,
+      priceMax: undefined as number | undefined,
+      priceMin: undefined as number | undefined,
+      wantsCheap: false,
+      nearCampus: false,
+      roomTypeHints: [] as string[],
+      amenityHints: [] as string[],
+    };
 
-  if (!hostel) {
-    return null;
-  }
+    const priceMaxMatch = q.match(/(under|below|max|less than)\s+(\d{2,6})/) || q.match(/<\s*(\d{2,6})/);
+    if (priceMaxMatch) intent.priceMax = Number(priceMaxMatch[2] ?? priceMaxMatch[1]);
 
-  const { data: images, error: imageError } = await supabase
-    .from('hostel_images')
-    .select('*')
-    .eq('hostel_id', id)
-    .order('display_order', { ascending: true });
+    const priceMinMatch = q.match(/(over|above|min|more than)\s+(\d{2,6})/) || q.match(/>\s*(\d{2,6})/);
+    if (priceMinMatch) intent.priceMin = Number(priceMinMatch[2] ?? priceMinMatch[1]);
 
-  if (imageError) {
-    throw new Error('Failed to fetch hostel images');
-  }
+    if (tokens.includes("cheap") || tokens.includes("budget") || tokens.includes("affordable")) {
+      intent.wantsCheap = true;
+    }
 
-  const { data: hostelAmenities, error: amenityError } = await supabase
-    .from('hostel_amenities')
-    .select('amenity_id, amenities(id, name, icon)')
-    .eq('hostel_id', id);
+    if (q.match(/near campus|close to campus|on campus|ucc|campus/)) {
+      intent.nearCampus = true;
+    }
 
-  if (amenityError) {
-    throw new Error('Failed to fetch hostel amenities');
-  }
+    const roomTypeMap: Array<[string[], string]> = [
+      [["self", "con"], "self-contained"],
+      [["self-contained"], "self-contained"],
+      [["selfcontained"], "self-contained"],
+      [["single"], "single"],
+      [["shared"], "shared"],
+      [["2", "in", "1"], "shared"],
+      [["two", "in", "one"], "shared"],
+      [["chamber"], "chamber"],
+      [["hall"], "hall"],
+      [["chamber", "and", "hall"], "chamber & hall"],
+    ];
+    for (const [keys, label] of roomTypeMap) {
+      if (keys.every((k) => tokens.includes(k))) {
+        if (!intent.roomTypeHints.includes(label)) intent.roomTypeHints.push(label);
+      }
+    }
 
-  const amenities = hostelAmenities?.map((item: any) => item.amenities).filter(Boolean) || [];
+    for (const k of Object.keys(this.AMENITY_SYNONYMS)) {
+      const syns = this.AMENITY_SYNONYMS[k] ?? [];
+      if (syns.some((s) => q.includes(TextUtils.normalize(s)))) intent.amenityHints.push(k);
+    }
+    intent.amenityHints = Array.from(new Set(intent.amenityHints));
 
-  return {
-    ...hostel,
-    images: images || [],
-    amenities: amenities,
-  };
-}
+    return intent;
+  },
+};
 
-export async function getFeaturedHostels(limit = 6) {
-  const limitNum = validateNumber(limit, 'Limit', 1, 100);
+// --- Indexer ---
+export const Indexer = {
+  stableHash(input: string): string {
+    let h = 5381;
+    const s = input || "";
+    for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
+    return (h >>> 0).toString(16);
+  },
 
-  const { data, error } = await supabase
-    .from('hostels')
-    .select('*')
-    .eq('verified', true)
-    .gt('rating', 0)
-    .order('rating', { ascending: false })
-    .limit(limitNum);
+  getStableId(hostel: any): string {
+    const id = hostel?.id ?? hostel?.uuid ?? hostel?.slug;
+    if (typeof id === "string" && id.trim()) return id;
+    if (typeof id === "number" && Number.isFinite(id)) return String(id);
+    const name = TextUtils.getStringField(hostel, "name") || "";
+    const loc = TextUtils.getStringField(hostel, "location") || TextUtils.getStringField(hostel, "address") || "";
+    return `hostel_${this.stableHash(TextUtils.normalize(`${name}|${loc}`))}`;
+  },
 
-  if (error) {
-    throw new Error('Failed to fetch featured hostels');
-  }
+  getImageUrls(hostel: any): string[] {
+    const arrays = [hostel.images, hostel.image_urls, hostel.photos];
+    for (const v of arrays) if (Array.isArray(v) && v.length) return v;
+    const singles = [hostel.main_image, hostel.cover_image, hostel.image];
+    const found = singles.find((x) => typeof x === "string" && x);
+    return found ? [found] : [];
+  },
 
-  return data || [];
-}
+  extractPriceWithUnit(hostel: any): { price: number | null; unit: PriceUnit } {
+    const direct: Array<[any, PriceUnit]> = [
+      [hostel.price_per_month, "month"],
+      [hostel.price_per_semester, "semester"],
+      [hostel.price_per_year, "year"],
+      [hostel.price_per_day, "day"],
+    ];
 
-export async function getHostelsByOwner(ownerId: string) {
-  if (!ownerId || typeof ownerId !== 'string') {
-    throw new Error('Invalid owner ID');
-  }
+    for (const [v, unit] of direct) {
+      if (typeof v === "number" && Number.isFinite(v)) return { price: v, unit };
+      if (typeof v === "string") {
+        const m = v.replace(/,/g, "").match(/(\d+(\.\d+)?)/);
+        if (m) return { price: Number(m[1]), unit };
+      }
+    }
 
-  const { data, error } = await supabase
-    .from('hostels')
-    .select('*')
-    .eq('owner_id', ownerId)
-    .order('created_at', { ascending: false });
+    const candidates = [hostel.price, hostel.price_from, hostel.min_price];
+    for (const c of candidates) {
+      if (typeof c === "number" && Number.isFinite(c)) return { price: c, unit: "unknown" };
+      if (typeof c === "string") {
+        const m = c.replace(/,/g, "").match(/(\d+(\.\d+)?)/);
+        if (m) return { price: Number(m[1]), unit: "unknown" };
+      }
+    }
+    return { price: null, unit: "unknown" };
+  },
 
-  if (error) {
-    throw new Error('Failed to fetch hostels');
-  }
+  isNearCampus(locationNorm: string, addressNorm: string, featuresNorm: string): boolean {
+    const combined = `${locationNorm} ${addressNorm} ${featuresNorm}`;
+    const NEAR_CAMPUS_AREAS = ["ayensu", "amamoma", "kwaprow", "ape wosika", "new site", "old site", "kakumdo"];
+    if (combined.match(/on campus|near campus|close to campus|ucc|campus/)) return true;
+    return NEAR_CAMPUS_AREAS.some((a) => combined.includes(a));
+  },
 
-  return data || [];
-}
+  build(hostels: any[]): IndexedHostel[] {
+    return hostels.map((h) => {
+      const id = this.getStableId(h);
+      const name = TextUtils.getStringField(h, "name") || "Hostel";
+      const location = TextUtils.getStringField(h, "location") || "";
+      const address = TextUtils.getStringField(h, "address") || "";
 
-export async function createHostel(hostel: Omit<Hostel, 'id' | 'created_at' | 'updated_at' | 'rating' | 'review_count'>) {
-  validateString(hostel.name, 'Hostel name', 200);
-  validateString(hostel.location, 'Location', 200);
-  validateString(hostel.city, 'City', 100);
-  validateString(hostel.country, 'Country', 100);
-  validateNumber(hostel.price_per_night, 'Price per night', 0.01, 10000);
-  validateRoomType(hostel.room_type);
-  validateNumber(hostel.beds_available, 'Beds available', 1, 1000);
-  if (!hostel.owner_id || typeof hostel.owner_id !== 'string') {
-    throw new Error('Invalid owner ID');
-  }
+      const featuresRaw = h.features ?? h.amenities ?? h.facilities ?? h.tags ?? h.description ?? h.category ?? "";
+      const roomRaw = h.room_type ?? h.roomType ?? h.type ?? h.category ?? "";
+      const amenityRaw = h.amenities ?? h.features ?? h.facilities ?? h.tags ?? "";
 
-  const { data, error } = await supabase
-    .from('hostels')
-    .insert([hostel])
-    .select();
+      const nameN = TextUtils.normalize(name);
+      const locationN = TextUtils.normalize(location);
+      const addressN = TextUtils.normalize(address);
+      const featuresN = TextUtils.normalize(TextUtils.toText(featuresRaw));
+      const roomTypeN = TextUtils.normalize(TextUtils.toText(roomRaw));
+      const amenityN = TextUtils.normalize(TextUtils.toText(amenityRaw));
 
-  if (error) {
-    throw new Error('Failed to create hostel');
-  }
+      const imgs = this.getImageUrls(h);
+      const { price, unit } = this.extractPriceWithUnit(h);
 
-  if (!data || data.length === 0) {
-    throw new Error('Failed to create hostel');
-  }
-
-  return data[0];
-}
-
-export async function updateHostel(id: string, updates: Partial<Hostel>) {
-  if (!id || typeof id !== 'string') {
-    throw new Error('Invalid hostel ID');
-  }
-
-  if (updates.name) validateString(updates.name, 'Hostel name', 200);
-  if (updates.location) validateString(updates.location, 'Location', 200);
-  if (updates.city) validateString(updates.city, 'City', 100);
-  if (updates.country) validateString(updates.country, 'Country', 100);
-  if (updates.price_per_night) validateNumber(updates.price_per_night, 'Price per night', 0.01, 10000);
-  if (updates.room_type) validateRoomType(updates.room_type);
-  if (updates.beds_available) validateNumber(updates.beds_available, 'Beds available', 1, 1000);
-
-  const { data, error } = await supabase
-    .from('hostels')
-    .update(updates)
-    .eq('id', id)
-    .select();
-
-  if (error) {
-    throw new Error('Failed to update hostel');
-  }
-
-  if (!data || data.length === 0) {
-    throw new Error('Hostel not found');
-  }
-
-  return data[0];
-}
-
-export async function deleteHostel(id: string) {
-  if (!id || typeof id !== 'string') {
-    throw new Error('Invalid hostel ID');
-  }
-
-  const { error } = await supabase
-    .from('hostels')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    throw new Error('Failed to delete hostel');
-  }
-}
+      return {
+        id,
+        hostel: h,
+        name,
+        location,
+        address,
+        nameN,
+        locationN,
+        addressN,
+        featuresN,
+        roomTypeN,
+        amenityN,
+        imgCount: imgs.length,
+        hasImages: imgs.length > 0 ? 1 : 0,
+        price,
+        priceUnit: unit,
+        hasPrice: price != null ? 1 : 0,
+        nearCampus: this.isNearCampus(locationN, addressN, featuresN),
+      };
+    });
+  },
+};
