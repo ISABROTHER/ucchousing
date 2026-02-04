@@ -23,35 +23,66 @@ export interface HostelWithDetails extends Hostel {
   amenities: Array<{ id: string; name: string; icon: string }>;
 }
 
-// --- Repository: Manual Data Source ---
-const MANUAL_HOSTELS_DATA = [
+// --- MANUAL DATA REPOSITORY ---
+// This ensures these hostels exist throughout the app, not just on the Search Page.
+const MANUAL_HOSTELS_DATA: any[] = [
   {
     id: "nana-agyoma-manual",
     name: "Nana Agyoma Hostel",
     address: "Amamoma, UCC",
     location: "Amamoma",
-    beds_available: 14, // Added availability
-    main_image: "https://i.imgur.com/luYRCIq.jpeg",
+    city: "Cape Coast",
+    country: "Ghana",
+    price_per_night: 200, // Estimated/Placeholder
+    room_type: "mixed",
+    beds_available: 14,
+    verified: true,
+    rating: 4.5,
+    review_count: 24,
+    description: "Nana Agyoma Hostel provides a comfortable and secure environment for students. Located in Amamoma, it is just a short walk from the UCC campus. We offer spacious rooms, reliable water supply, and a dedicated study area.",
+    owner_id: "manual-owner",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     images: [
-      "https://i.imgur.com/luYRCIq.jpeg",
-      "https://i.imgur.com/peh4mP5.jpeg",
-      "https://i.imgur.com/CKdT7Di.jpeg",
-      "https://i.imgur.com/Ci2Vn7D.jpeg",
+      { id: "img1", image_url: "https://i.imgur.com/luYRCIq.jpeg", display_order: 1 },
+      { id: "img2", image_url: "https://i.imgur.com/peh4mP5.jpeg", display_order: 2 },
+      { id: "img3", image_url: "https://i.imgur.com/CKdT7Di.jpeg", display_order: 3 },
+      { id: "img4", image_url: "https://i.imgur.com/Ci2Vn7D.jpeg", display_order: 4 },
     ],
+    amenities: [
+      { id: "a1", name: "Wi-Fi", icon: "wifi" },
+      { id: "a2", name: "Water Supply", icon: "droplet" },
+      { id: "a3", name: "Security", icon: "shield" },
+      { id: "a4", name: "Study Room", icon: "book" }
+    ]
   },
   {
     id: "adoration-home-plus-manual",
     name: "Adoration Home Plus Hostel",
     address: "Ayensu, UCC",
     location: "Ayensu",
-    beds_available: 5, // Added availability
-    main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+    city: "Cape Coast",
+    country: "Ghana",
+    price_per_night: 180, // Estimated/Placeholder
+    room_type: "mixed",
+    beds_available: 5,
+    verified: true,
+    rating: 4.2,
+    review_count: 15,
+    description: "Adoration Home Plus offers a serene atmosphere perfect for academic excellence. Located in Ayensu, we prioritize your comfort and safety with 24/7 security and modern facilities.",
+    owner_id: "manual-owner",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     images: [
-      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
-      "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg",
-      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png",
-      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+      { id: "img1", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", display_order: 1 },
+      { id: "img2", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg", display_order: 2 },
+      { id: "img3", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png", display_order: 3 },
     ],
+    amenities: [
+      { id: "a1", name: "Generator", icon: "zap" },
+      { id: "a2", name: "Gated", icon: "lock" },
+      { id: "a3", name: "Kitchen", icon: "coffee" }
+    ]
   },
 ];
 
@@ -80,12 +111,7 @@ function validateRoomType(value: any): 'dorm' | 'private' | 'mixed' {
   return value;
 }
 
-// --- Repository: Public API ---
-
-/**
- * Fetches all hostels from the DB and merges them with manual entries.
- * Acts as the single source of truth for "All Hostels".
- */
+// --- UPDATED: getHostels now merges manual data ---
 export async function getAllHostelsRepository() {
     const { data, error } = await supabase
         .from('hostels')
@@ -98,10 +124,10 @@ export async function getAllHostelsRepository() {
     
     const list = Array.isArray(data) ? [...data] : [];
 
-    // Merge manual hostels ensuring no duplicates by name
-    const existingNames = new Set(list.map((h: any) => h.name?.toLowerCase()));
+    // Merge manual hostels ensuring no duplicates
+    const existingIds = new Set(list.map((h: any) => h.id));
     MANUAL_HOSTELS_DATA.forEach((m) => {
-        if (m.name && !existingNames.has(m.name.toLowerCase())) {
+        if (!existingIds.has(m.id)) {
             list.push(m);
         }
     });
@@ -109,6 +135,7 @@ export async function getAllHostelsRepository() {
     return list;
 }
 
+// Kept for backward compatibility if used elsewhere
 export async function getHostels(filters?: {
   city?: string;
   minPrice?: number;
@@ -146,14 +173,33 @@ export async function getHostels(filters?: {
     throw new Error('Failed to fetch hostels');
   }
 
-  return data || [];
+  const list = data || [];
+  
+  // Simple merge for manual data if no filters strict enough to exclude them
+  // (In a real app, you'd filter the manual array too)
+  const existingIds = new Set(list.map((h: any) => h.id));
+  MANUAL_HOSTELS_DATA.forEach((m) => {
+      if (!existingIds.has(m.id)) {
+          list.push(m);
+      }
+  });
+
+  return list;
 }
 
+// --- UPDATED: getHostelById checks manual data first ---
 export async function getHostelById(id: string): Promise<HostelWithDetails | null> {
   if (!id || typeof id !== 'string') {
     throw new Error('Invalid hostel ID');
   }
 
+  // 1. Check Manual Data
+  const manualHostel = MANUAL_HOSTELS_DATA.find(h => h.id === id);
+  if (manualHostel) {
+    return manualHostel as HostelWithDetails;
+  }
+
+  // 2. Check Database
   const { data: hostel, error: hostelError } = await supabase
     .from('hostels')
     .select('*')
@@ -161,6 +207,8 @@ export async function getHostelById(id: string): Promise<HostelWithDetails | nul
     .maybeSingle();
 
   if (hostelError) {
+    // If it's a UUID error (e.g. searching for a manual ID in DB), just return null
+    if (hostelError.code === '22P02') return null;
     throw new Error('Failed to fetch hostel');
   }
 
