@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft, Zap } from 'lucide-react';
 import { PageType } from '../App';
 import { getHostelById } from '../lib/hostels';
 import { getHostelReviews } from '../lib/reviews';
@@ -55,7 +55,7 @@ export default function HostelDetailPage({
     );
   }
 
-  // 2. Not Found State (Fixed the infinite load issue)
+  // 2. Not Found State
   if (!hostel) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -74,6 +74,9 @@ export default function HostelDetailPage({
     );
   }
 
+  const bedsLeft = hostel.beds_available || 0;
+  const scarcityText = bedsLeft > 6 ? "6+ Rooms Left" : `${bedsLeft} Rooms Left`;
+
   // 3. Success State
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,8 +90,9 @@ export default function HostelDetailPage({
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          {/* LEFT COLUMN: IMAGES */}
           <div className="lg:col-span-2">
-            <div className="relative bg-gray-200 rounded-lg overflow-hidden h-96 mb-4 flex items-center justify-center">
+            <div className="relative bg-gray-200 rounded-lg overflow-hidden h-96 mb-4 flex items-center justify-center shadow-sm">
               {hostel.images && hostel.images.length > 0 ? (
                 <img
                   src={hostel.images[imageIndex]?.image_url}
@@ -99,20 +103,20 @@ export default function HostelDetailPage({
                 <div className="text-gray-400 text-4xl">🏠</div>
               )}
               {hostel.verified && (
-                <div className="absolute top-4 left-4 bg-[#DC143C] text-white px-4 py-2 rounded-full font-semibold">
+                <div className="absolute top-4 left-4 bg-[#DC143C] text-white px-4 py-2 rounded-full font-semibold shadow-md">
                   Verified
                 </div>
               )}
             </div>
 
             {hostel.images && hostel.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {hostel.images.map((image: any, idx: number) => (
                   <button
                     key={image.id}
                     onClick={() => setImageIndex(idx)}
-                    className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 ${
-                      imageIndex === idx ? 'border-[#DC143C]' : 'border-gray-300'
+                    className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
+                      imageIndex === idx ? 'border-[#DC143C] scale-105' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
                     <img
@@ -126,84 +130,104 @@ export default function HostelDetailPage({
             )}
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-6 h-fit sticky top-24">
+          {/* RIGHT COLUMN: BOOKING CARD */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 h-fit sticky top-24">
+            
+            {/* LIVE INDICATOR */}
+            <div className="flex items-center gap-2 mb-4 bg-red-50 w-fit px-3 py-1 rounded-full border border-red-100">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#DC143C]"></span>
+              </span>
+              <span className="text-xs font-bold text-[#DC143C] uppercase tracking-wide">
+                Live • {scarcityText}
+              </span>
+            </div>
+
             <div className="mb-6">
-              <div className="text-4xl font-bold text-[#DC143C] mb-2">
-                ₵{hostel.price_per_night} 
+              <div className="text-4xl font-extrabold text-gray-900 mb-1 flex items-baseline gap-1">
+                <span className="text-[#DC143C]">₵{hostel.price_per_night}</span>
               </div>
-              <p className="text-gray-600">per semester (approx)</p>
+              <p className="text-gray-500 text-sm font-medium">per semester (approx)</p>
             </div>
 
             {user && userProfile?.user_type === 'student' ? (
               <button
                 onClick={() => onNavigate('booking', hostelId)}
-                className="w-full bg-[#DC143C] text-white font-semibold py-3 rounded-lg hover:bg-red-700 transition-colors"
+                className="group relative w-full bg-gradient-to-r from-[#DC143C] to-red-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 overflow-hidden"
               >
-                Book Now
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <span className="relative flex items-center justify-center gap-2">
+                  BOOK NOW
+                  <Zap className="w-4 h-4 fill-white" />
+                </span>
               </button>
             ) : user ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 font-medium">
                 <AlertCircle className="w-4 h-4 inline mr-2" />
                 Only students can make bookings
               </div>
             ) : (
               <button
                 onClick={() => onNavigate('auth')}
-                className="w-full bg-[#DC143C] text-white font-semibold py-3 rounded-lg hover:bg-red-700 transition-colors"
+                className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-all hover:scale-[1.02]"
               >
                 Sign In to Book
               </button>
             )}
 
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-2 text-gray-700">
-                <MapPin className="w-5 h-5 text-[#DC143C]" />
-                <span>{hostel.location}, {hostel.city}</span>
+            <div className="mt-8 space-y-4 border-t border-gray-100 pt-6">
+              <div className="flex items-center gap-3 text-gray-700">
+                <MapPin className="w-5 h-5 text-gray-400" />
+                <span className="font-medium">{hostel.location}, {hostel.city}</span>
               </div>
 
-              <div className="flex items-center gap-2 text-gray-700">
-                <Users className="w-5 h-5 text-[#DC143C]" />
-                <span className="capitalize">{hostel.room_type} rooms</span>
+              <div className="flex items-center gap-3 text-gray-700">
+                <Users className="w-5 h-5 text-gray-400" />
+                <span className="capitalize font-medium">{hostel.room_type} rooms</span>
               </div>
 
-              <div className="flex items-center gap-2 text-gray-700">
-                <Clock className="w-5 h-5 text-[#DC143C]" />
-                <span>{hostel.beds_available} beds available</span>
+              <div className="flex items-center gap-3 text-gray-700">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <span className="font-medium">{hostel.beds_available} beds available</span>
               </div>
 
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-                <Star className="w-5 h-5 fill-[#DC143C] text-[#DC143C]" />
-                <span className="font-semibold text-black">
-                  {hostel.rating?.toFixed(1) || "N/A"}
-                </span>
-                <span className="text-sm text-gray-600">
-                  ({hostel.review_count || 0} reviews)
+              <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <span className="font-bold text-gray-900 text-lg">
+                    {hostel.rating?.toFixed(1) || "N/A"}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500 font-medium hover:text-gray-700 underline cursor-pointer">
+                  {hostel.review_count || 0} reviews
                 </span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* BOTTOM SECTION: DETAILS & REVIEWS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="mb-12">
-              <h2 className="text-2xl font-bold text-black mb-4">About</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
+              <p className="text-gray-700 leading-relaxed text-lg">
                 {hostel.description || 'No description available for this hostel yet.'}
               </p>
             </div>
 
             {hostel.amenities && hostel.amenities.length > 0 && (
               <div className="mb-12">
-                <h2 className="text-2xl font-bold text-black mb-4">Amenities</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Amenities</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {hostel.amenities.map((amenity: any) => (
                     <div
                       key={amenity.id}
-                      className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-[#DC143C]/30 transition-colors"
                     >
                       <Wifi className="w-5 h-5 text-[#DC143C]" />
-                      <span className="text-gray-700">{amenity.name}</span>
+                      <span className="text-gray-700 font-medium">{amenity.name}</span>
                     </div>
                   ))}
                 </div>
@@ -211,17 +235,17 @@ export default function HostelDetailPage({
             )}
 
             <div>
-              <h2 className="text-2xl font-bold text-black mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Reviews ({reviews.length})
               </h2>
 
               {reviews.length > 0 ? (
                 <div className="space-y-6">
                   {reviews.map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex items-start justify-between mb-2">
+                    <div key={review.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                      <div className="flex items-start justify-between mb-4">
                         <div>
-                          <p className="font-semibold text-black">
+                          <p className="font-bold text-gray-900">
                             {review.user_profiles?.full_name || 'Anonymous'}
                           </p>
                           <p className="text-sm text-gray-500">
@@ -234,8 +258,8 @@ export default function HostelDetailPage({
                               key={i}
                               className={`w-4 h-4 ${
                                 i < review.rating
-                                  ? 'fill-[#DC143C] text-[#DC143C]'
-                                  : 'text-gray-300'
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-200'
                               }`}
                             />
                           ))}
@@ -248,9 +272,12 @@ export default function HostelDetailPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600 text-center py-8">
-                  No reviews yet. Be the first to review!
-                </p>
+                <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <Star className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">
+                    No reviews yet. Be the first to review!
+                  </p>
+                </div>
               )}
             </div>
           </div>
