@@ -4,6 +4,59 @@ import { PageType } from '../App';
 import { getHostelById } from '../lib/hostels';
 import { getHostelReviews } from '../lib/reviews';
 
+// --- Manual Data Fallback (Fixes "Not Found" for featured cards) ---
+const MANUAL_HOSTELS: Record<string, any> = {
+  "nana-agyoma-manual": {
+    id: "nana-agyoma-manual",
+    name: "Nana Agyoma Hostel",
+    location: "Amamoma",
+    city: "Cape Coast",
+    price_per_night: 2800,
+    room_type: "2 in a room",
+    beds_available: 8,
+    rating: 4.5,
+    review_count: 12,
+    verified: true,
+    description: "A comfortable and secure hostel located in the heart of Amamoma. Close to campus with reliable water and electricity supply.",
+    images: [
+      { id: '1', image_url: "https://i.imgur.com/luYRCIq.jpeg" },
+      { id: '2', image_url: "https://i.imgur.com/peh4mP5.jpeg" },
+      { id: '3', image_url: "https://i.imgur.com/CKdT7Di.jpeg" },
+      { id: '4', image_url: "https://i.imgur.com/Ci2Vn7D.jpeg" },
+    ],
+    amenities: [
+      { id: '1', name: "Free Wi-Fi" },
+      { id: '2', name: "Water Flow" },
+      { id: '3', name: "Security" },
+      { id: '4', name: "Study Room" }
+    ]
+  },
+  "adoration-home-plus-manual": {
+    id: "adoration-home-plus-manual",
+    name: "Adoration Home Plus Hostel",
+    location: "Ayensu",
+    city: "Cape Coast",
+    price_per_night: 3200,
+    room_type: "1 in a room",
+    beds_available: 4,
+    rating: 4.8,
+    review_count: 8,
+    verified: true,
+    description: "Premium accommodation for students who value privacy and comfort. Located in a serene environment at Ayensu.",
+    images: [
+      { id: '1', image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png" },
+      { id: '2', image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg" },
+      { id: '3', image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png" },
+    ],
+    amenities: [
+      { id: '1', name: "AC" },
+      { id: '2', name: "Generator" },
+      { id: '3', name: "Kitchen" },
+      { id: '4', name: "DSTV" }
+    ]
+  }
+};
+
 interface HostelDetailPageProps {
   hostelId: string;
   user: any;
@@ -29,15 +82,28 @@ export default function HostelDetailPage({
   const loadHostel = async () => {
     setLoading(true);
     try {
-      const data = await getHostelById(hostelId);
+      // 1. Try fetching from API
+      let data = await getHostelById(hostelId);
+      
+      // 2. Fallback to manual data if not found in API
+      if (!data && MANUAL_HOSTELS[hostelId]) {
+        console.log("Using manual fallback data for:", hostelId);
+        data = MANUAL_HOSTELS[hostelId];
+      }
+
       setHostel(data);
-      // Only fetch reviews if we actually found a hostel
-      if (data) {
+
+      // Only fetch reviews if we actually found a hostel (and it's not a manual one without reviews)
+      if (data && !MANUAL_HOSTELS[hostelId]) {
         const reviewsData = await getHostelReviews(hostelId);
         setReviews(reviewsData);
       }
     } catch (err) {
       console.error("Error loading hostel:", err);
+      // Final fallback attempt in case of error
+      if (MANUAL_HOSTELS[hostelId]) {
+        setHostel(MANUAL_HOSTELS[hostelId]);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,7 +179,7 @@ export default function HostelDetailPage({
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {hostel.images.map((image: any, idx: number) => (
                   <button
-                    key={image.id}
+                    key={image.id || idx}
                     onClick={() => setImageIndex(idx)}
                     className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
                       imageIndex === idx ? 'border-[#DC143C] scale-105' : 'border-transparent hover:border-gray-300'
@@ -134,7 +200,7 @@ export default function HostelDetailPage({
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 h-fit sticky top-24">
             
             {/* LIVE INDICATOR */}
-            <div className="flex items-center gap-2 mb-4 bg-red-50 w-fit px-3 py-1 rounded-full border border-red-100">
+            <div className="flex items-center gap-2 mb-4 bg-red-50 w-fit px-3 py-1.5 rounded-full border border-red-100">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#DC143C]"></span>
