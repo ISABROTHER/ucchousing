@@ -12,6 +12,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Bell,
+  Zap,
+  TrendingUp,
 } from "lucide-react";
 import { getAllHostelsRepository } from "../lib/hostels";
 import { PageType } from "../App";
@@ -584,59 +587,129 @@ function SearchMosaicCard({
       </button>
 
       {/* DETAILS LAYOUT */}
-      <div className="px-2 pb-2">
-        <div className="flex items-start justify-between gap-4">
-          {/* LEFT: Name and Location */}
-          <div className="flex-1 min-w-0">
-            <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors mb-1`}>
-              {TextUtils.highlight(item.name, query)}
-            </h3>
+      <div className="px-2 pb-2 space-y-3">
+        {/* Name */}
+        <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors`}>
+          {TextUtils.highlight(item.name, query)}
+        </h3>
 
-            {(item.location || item.address) && (
-              <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium">
-                <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
-                <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
+        {/* Full-Width Availability Bar */}
+        <div className="relative -mx-2">
+          {status === "full" ? (
+            <div className={`relative w-full ${theme.boxBg} overflow-hidden`}>
+              {/* Animated diagonal stripes */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px)'
+              }} />
+
+              <div className="relative flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-white" />
+                  <span className="text-sm font-black uppercase tracking-wide text-white">Fully Booked</span>
+                </div>
+                <button className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-105">
+                  <Bell className="h-3.5 w-3.5" />
+                  Notify Me
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className={`group/avail relative w-full ${theme.boxBg} overflow-hidden`}>
+              {/* Animated shimmer effect */}
+              {status !== "unknown" && (
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              )}
 
-          {/* RIGHT: Availability Bar */}
-          <div className="shrink-0">
-            {status === "full" ? (
-              <div className={`inline-flex items-center gap-2 rounded-lg ${theme.boxBg} px-4 py-2 ${theme.boxText} shadow-md`}>
-                <XCircle className="h-5 w-5" />
-                <span className="text-sm font-black uppercase tracking-wide">Full</span>
-              </div>
-            ) : (
-              <div
-                className={`group/box relative inline-flex items-center gap-2 rounded-lg ${theme.boxBg} px-4 py-2 ${theme.boxText} shadow-md transition-all duration-300 hover:shadow-lg overflow-hidden`}
-              >
-                {status !== "unknown" && (
-                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                )}
+              {/* Availability percentage bar (background) */}
+              {status !== "unknown" && (
+                <div
+                  className="absolute bottom-0 left-0 h-1 bg-white/30 transition-all duration-1000"
+                  style={{
+                    width: status === "low" ? "20%" : status === "medium" ? "60%" : "90%"
+                  }}
+                />
+              )}
 
-                <div className="relative z-10 flex items-center gap-2">
+              {/* Pulse ring for low availability */}
+              {status === "low" && (
+                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                  <span className="relative flex h-5 w-5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-40" />
+                    <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                      <Zap className="h-3 w-3 text-white" />
+                    </span>
+                  </span>
+                </div>
+              )}
+
+              <div className="relative flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-3">
                   {status === "unknown" ? (
-                    <AlertCircle className="h-5 w-5" />
+                    <AlertCircle className="h-5 w-5 text-white" />
                   ) : status === "low" ? (
-                    <BedDouble className="h-5 w-5 animate-pulse" />
+                    <div className="w-5" />
                   ) : (
-                    <CheckCircle className="h-5 w-5" />
+                    <CheckCircle className="h-5 w-5 text-white" />
                   )}
 
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={`text-xl font-black leading-none ${status === "low" ? "animate-pulse" : ""}`}>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-2xl font-black leading-none text-white ${status === "low" ? "animate-pulse" : ""}`}>
                       {label}
                     </span>
-                    <span className="text-xs font-bold uppercase tracking-wide opacity-90">
+                    <span className="text-xs font-bold uppercase tracking-wide text-white/90">
                       {status === "unknown" ? "Available" : subLabel}
                     </span>
+
+                    {/* Live indicator */}
+                    {status !== "unknown" && verified && (
+                      <span className="ml-1 flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-sm">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                        </span>
+                        Live
+                      </span>
+                    )}
                   </div>
                 </div>
+
+                {/* Quick Actions */}
+                <div className="flex items-center gap-2">
+                  {/* Booking velocity indicator */}
+                  {status === "low" && (
+                    <div className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 backdrop-blur-sm">
+                      <TrendingUp className="h-3.5 w-3.5 text-white" />
+                      <span className="text-[10px] font-black uppercase text-white">Hot</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={onOpen}
+                    className="flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-black uppercase tracking-wide text-slate-900 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Book Now
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Last updated timestamp (subtle) */}
+              {updatedAt && (
+                <div className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-medium text-white/60">
+                  Updated {timeAgo(updatedAt)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Location */}
+        {(item.location || item.address) && (
+          <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium">
+            <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
+            <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
+          </div>
+        )}
       </div>
     </div>
   );
