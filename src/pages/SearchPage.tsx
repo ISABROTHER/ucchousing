@@ -8,6 +8,9 @@ import {
   ArrowUpDown,
   Sparkles,
   X,
+  BedDouble, // Added BedDouble for the availability icon
+  CheckCircle, // Added CheckCircle for available
+  XCircle, // Added XCircle for full
 } from "lucide-react";
 import { getAllHostelsRepository } from "../lib/hostels";
 import { PageType } from "../App";
@@ -375,6 +378,11 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
   
   const displayChips = chips.slice(0, 4);
 
+  // Availability Logic
+  const beds = item.hostel.beds_available ?? 0;
+  const isAvailable = beds > 0;
+  const availabilityText = isAvailable ? `${beds} rooms available` : "Fully booked";
+
   return (
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
       <button onClick={onOpen} className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] transition-transform" type="button">
@@ -404,13 +412,18 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
       </button>
 
       <div className="px-2 pb-2">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors">{TextUtils.highlight(item.name, query)}</h3>
-          <div className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>AI ranked</span>
+        {/* AVAILABILITY BADGE (Left Side) - Replacing AI Ranked */}
+        <div className="mb-2">
+          <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-extrabold ${isAvailable ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+            {isAvailable ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+            <span>{availabilityText}</span>
           </div>
         </div>
+
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors">{TextUtils.highlight(item.name, query)}</h3>
+        </div>
+
         {(item.location || item.address) && (
           <div className="mt-1 flex items-center gap-1.5 text-slate-500 text-sm font-medium">
             <MapPin className="h-4 w-4 text-slate-400" />
