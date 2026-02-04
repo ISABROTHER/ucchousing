@@ -382,6 +382,25 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
   const beds = item.hostel.beds_available ?? 0;
   const isAvailable = beds > 0;
 
+  // COLOR THEME SYSTEM (Matches Availability Box)
+  const theme = isAvailable 
+    ? {
+        nameHover: "group-hover/card:text-emerald-700",
+        icon: "text-emerald-500",
+        chip: "bg-emerald-50 text-emerald-800 border-emerald-100",
+        boxBg: "bg-emerald-500",
+        boxShadow: "shadow-emerald-200",
+        boxText: "text-white"
+      }
+    : {
+        nameHover: "group-hover/card:text-rose-700",
+        icon: "text-rose-500",
+        chip: "bg-rose-50 text-rose-800 border-rose-100",
+        boxBg: "bg-rose-500", // Bright red for full to match "BRIGHT COLOURS" request
+        boxShadow: "shadow-rose-200",
+        boxText: "text-white"
+      };
+
   return (
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
       
@@ -416,16 +435,17 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
       <div className="px-2 pb-2">
         <div className="flex items-stretch justify-between gap-4">
           
-          {/* LEFT: Name, Location, Chips */}
+          {/* LEFT: Name, Location, Chips (THEMED) */}
           <div className="flex-1 min-w-0 flex flex-col justify-between">
             <div>
-              <h3 className="text-xl font-extrabold text-slate-900 leading-tight group-hover/card:text-emerald-700 transition-colors mb-1">
+              <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors mb-1`}>
                 {TextUtils.highlight(item.name, query)}
               </h3>
               
               {(item.location || item.address) && (
                 <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mb-3">
-                  <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                  {/* Colored Icon */}
+                  <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
                   <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
                 </div>
               )}
@@ -434,7 +454,8 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
             {displayChips.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-auto">
                 {displayChips.map((c) => (
-                  <span key={c} className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-extrabold text-slate-700 uppercase tracking-wide">
+                  // Colored Chips
+                  <span key={c} className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${theme.chip}`}>
                     {c}
                   </span>
                 ))}
@@ -445,7 +466,7 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
           {/* RIGHT: Availability Box (Bold & Animated) */}
           <div className="shrink-0 flex flex-col justify-end">
             {isAvailable ? (
-              <div className="group/box relative flex flex-col items-center justify-center rounded-2xl bg-emerald-500 p-3 text-white shadow-xl shadow-emerald-200 transition-all duration-500 hover:scale-105 hover:-translate-y-1 hover:shadow-emerald-300 overflow-hidden min-w-[90px] text-center">
+              <div className={`group/box relative flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} transition-all duration-500 hover:scale-105 hover:-translate-y-1 overflow-hidden min-w-[90px] text-center`}>
                  {/* Animated Glint */}
                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                  
@@ -456,8 +477,9 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
                  </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-100 border-2 border-slate-200 p-3 text-slate-400 min-w-[90px] text-center grayscale">
-                 <XCircle className="h-6 w-6 mb-1 opacity-50"/>
+              // BRIGHT RED FOR FULL (as requested)
+              <div className={`flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} min-w-[90px] text-center`}>
+                 <XCircle className="h-8 w-8 mb-1 opacity-80"/>
                  <div className="text-xs font-black uppercase tracking-wider">Full</div>
               </div>
             )}
