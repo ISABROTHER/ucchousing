@@ -456,32 +456,6 @@ function SearchMosaicCard({
   while (safeImages.length < 5 && safeImages.length > 0) safeImages.push(safeImages[0]);
   const [a, b, c, d, e] = safeImages;
 
-  const unitLabel =
-    item.priceUnit === "month"
-      ? "/mo"
-      : item.priceUnit === "semester"
-        ? "/sem"
-        : item.priceUnit === "year"
-          ? "/yr"
-          : item.priceUnit === "day"
-            ? "/day"
-            : "";
-  const showPrice = item.price != null;
-
-  const chips: string[] = [];
-  if (showPrice) chips.push(`From ${item.price!.toLocaleString()}${unitLabel}`);
-
-  if (item.roomTypeN.includes("self-contained") || item.roomTypeN.includes("self con")) chips.push("Self-contained");
-  else if (item.roomTypeN.includes("shared") || item.roomTypeN.includes("2 in 1")) chips.push("Shared");
-  else if (item.roomTypeN.includes("single")) chips.push("Single room");
-
-  if (item.nearCampus) chips.push("Near campus");
-
-  const hasWifi = IntentParser.AMENITY_SYNONYMS["wifi"].some((s) => item.amenityN.includes(TextUtils.normalize(s)));
-  if (hasWifi) chips.push("Wi-Fi");
-
-  const displayChips = chips.slice(0, 4);
-
   // ✅ MODERN AVAILABILITY: range + unknown + verified + last-updated
   const availN = getAvailabilityNumber(item.hostel);
   const status = getAvailabilityStatus(availN);
@@ -490,13 +464,12 @@ function SearchMosaicCard({
   const updatedAt = getAvailabilityUpdatedAt(item.hostel);
   const verified = isAvailabilityVerified(item.hostel);
 
-  // Theme based on status (keeps your “bright” idea)
+  // Theme based on status
   const theme =
     status === "full"
       ? {
           nameHover: "group-hover/card:text-rose-700",
           icon: "text-rose-500",
-          chip: "bg-rose-50 text-rose-800 border-rose-100",
           boxBg: "bg-rose-500",
           boxShadow: "shadow-rose-200",
           boxText: "text-white",
@@ -505,7 +478,6 @@ function SearchMosaicCard({
         ? {
             nameHover: "group-hover/card:text-slate-900",
             icon: "text-slate-500",
-            chip: "bg-slate-50 text-slate-800 border-slate-200",
             boxBg: "bg-slate-900",
             boxShadow: "shadow-slate-200",
             boxText: "text-white",
@@ -514,7 +486,6 @@ function SearchMosaicCard({
           ? {
               nameHover: "group-hover/card:text-amber-700",
               icon: "text-amber-500",
-              chip: "bg-amber-50 text-amber-800 border-amber-100",
               boxBg: "bg-amber-500",
               boxShadow: "shadow-amber-200",
               boxText: "text-white",
@@ -523,7 +494,6 @@ function SearchMosaicCard({
               // medium/high → green
               nameHover: "group-hover/card:text-emerald-700",
               icon: "text-emerald-500",
-              chip: "bg-emerald-50 text-emerald-800 border-emerald-100",
               boxBg: "bg-emerald-500",
               boxShadow: "shadow-emerald-200",
               boxText: "text-white",
@@ -613,100 +583,55 @@ function SearchMosaicCard({
         </div>
       </button>
 
-      {/* DETAILS SPLIT LAYOUT */}
+      {/* DETAILS LAYOUT */}
       <div className="px-2 pb-2">
-        <div className="flex items-stretch justify-between gap-4">
-          {/* LEFT: Name, Location, Chips */}
-          <div className="flex-1 min-w-0 flex flex-col justify-between">
-            <div>
-              <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors mb-1`}>
-                {TextUtils.highlight(item.name, query)}
-              </h3>
+        <div className="flex items-start justify-between gap-4">
+          {/* LEFT: Name and Location */}
+          <div className="flex-1 min-w-0">
+            <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors mb-1`}>
+              {TextUtils.highlight(item.name, query)}
+            </h3>
 
-              {(item.location || item.address) && (
-                <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mb-3">
-                  <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
-                  <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
-                </div>
-              )}
-            </div>
-
-            {displayChips.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-auto">
-                {displayChips.map((c) => (
-                  <span
-                    key={c}
-                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${theme.chip}`}
-                  >
-                    {c}
-                  </span>
-                ))}
+            {(item.location || item.address) && (
+              <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium">
+                <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
+                <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
               </div>
             )}
           </div>
 
-          {/* RIGHT: Availability Box (Range + Trust) */}
-          <div className="shrink-0 flex flex-col justify-end">
+          {/* RIGHT: Availability Bar */}
+          <div className="shrink-0">
             {status === "full" ? (
-              <div className={`flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} min-w-[98px] text-center`}>
-                <XCircle className="h-8 w-8 mb-1 opacity-90" />
-                <div className="text-xs font-black uppercase tracking-wider">Full</div>
-                {updatedAt ? (
-                  <div className="mt-1 text-[10px] font-bold opacity-90">Updated {timeAgo(updatedAt)}</div>
-                ) : null}
+              <div className={`inline-flex items-center gap-2 rounded-lg ${theme.boxBg} px-4 py-2 ${theme.boxText} shadow-md`}>
+                <XCircle className="h-5 w-5" />
+                <span className="text-sm font-black uppercase tracking-wide">Full</span>
               </div>
             ) : (
               <div
-                className={`group/box relative flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} transition-all duration-500 hover:scale-105 hover:-translate-y-1 overflow-hidden min-w-[98px] text-center`}
+                className={`group/box relative inline-flex items-center gap-2 rounded-lg ${theme.boxBg} px-4 py-2 ${theme.boxText} shadow-md transition-all duration-300 hover:shadow-lg overflow-hidden`}
               >
-                {/* Subtle shimmer only when we actually have availability number */}
                 {status !== "unknown" && (
                   <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 )}
 
-                <div className="relative z-10">
-                  <div className="text-[10px] font-black uppercase tracking-widest opacity-90 mb-0.5">
-                    {status === "unknown" ? "Check" : status === "low" ? "Hurry" : "Available"}
-                  </div>
+                <div className="relative z-10 flex items-center gap-2">
+                  {status === "unknown" ? (
+                    <AlertCircle className="h-5 w-5" />
+                  ) : status === "low" ? (
+                    <BedDouble className="h-5 w-5 animate-pulse" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5" />
+                  )}
 
-                  <div className={`text-3xl font-black leading-none tracking-tighter ${status === "low" ? "animate-pulse" : ""}`}>
-                    {label}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-xl font-black leading-none ${status === "low" ? "animate-pulse" : ""}`}>
+                      {label}
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wide opacity-90">
+                      {status === "unknown" ? "Available" : subLabel}
+                    </span>
                   </div>
-
-                  <div className="text-[10px] font-bold opacity-90 leading-tight mt-0.5">
-                    {subLabel.split(" ").map((w, i) => (
-                      <span key={i}>
-                        {w}
-                        {i === 0 ? <br /> : null}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Trust row */}
-                  <div className="mt-2 flex items-center justify-center gap-1.5">
-                    {verified ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Verified
-                      </span>
-                    ) : status === "unknown" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        Ask
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
-                        <BedDouble className="h-3.5 w-3.5" />
-                        Live
-                      </span>
-                    )}
-                  </div>
-
-                  {updatedAt ? (
-                    <div className="mt-1 text-[10px] font-bold opacity-90 predicted">
-                      Updated {timeAgo(updatedAt)}
-                    </div>
-                  ) : null}
                 </div>
               </div>
             )}
