@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -21,7 +21,7 @@ interface SearchPageProps {
 
 type Hostel = any;
 
-// -------------------- Helpers --------------------
+// -------------------- Core text utils --------------------
 function getStringField(obj: any, key: string) {
   return typeof obj?.[key] === "string" ? obj[key] : undefined;
 }
@@ -30,7 +30,11 @@ function toText(v: any): string {
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   if (Array.isArray(v)) return v.map(toText).join(" ");
-  if (v && typeof v === "object") return Object.values(v).map(toText).join(" ");
+  if (v && typeof v === "object") {
+    // IMPORTANT: avoid exploding huge objects
+    const vals = Object.values(v);
+    return vals.slice(0, 30).map(toText).join(" ");
+  }
   return "";
 }
 
@@ -49,20 +53,80 @@ function tokenize(s: string): string[] {
   return n.split(" ").filter(Boolean);
 }
 
-// Fuzzy token match: query tokens must be mostly present (substring match)
-function fuzzyTokenMatch(text: string, queryTokens: string[]): number {
-  const t = tokenize(text);
-  if (!t.length || !queryTokens.length) return 0;
-
-  let hits = 0;
-  for (const q of queryTokens) {
-    if (q.length <= 1) continue;
-    const found = t.some((w) => w.includes(q) || q.includes(w));
-    if (found) hits += 1;
-  }
-  return Math.round((hits / Math.max(1, queryTokens.length)) * 100); // 0..100
+function safeNumberInput(v: string): number | null {
+  const s = (v || "").replace(/,/g, "").trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
 }
 
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
+}
+
+// -------------------- Better fuzzy matching (still lightweight) --------------------
+// Tiny edit-distance for short tokens (helps typos like "amammoa" -> "amamoma")
+function editDistance(a: string, b: string): number {
+  const s = a || "";
+  const t = b || "";
+  const m = s.length;
+  const n = t.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  // small DP
+  const dp = new Array(n + 1).fill(0);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0];
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + cost);
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+
+// Score 0..100 based on token hit ratio. Uses substring match, and edit-distance fallback for short tokens.
+function fuzzyScore(hay: string, queryTokens: string[]): number {
+  if (!queryTokens.length) return 0;
+
+  const hTokens = tokenize(hay);
+  if (!hTokens.length) return 0;
+
+  let hits = 0;
+
+  for (const q of queryTokens) {
+    if (q.length <= 1) continue;
+
+    // direct substring matches first
+    const direct = hTokens.some((w) => w.includes(q) || q.includes(w));
+    if (direct) {
+      hits += 1;
+      continue;
+    }
+
+    // typo tolerance for short tokens (2..10 chars)
+    if (q.length >= 2 && q.length <= 10) {
+      const close = hTokens.some((w) => {
+        if (w.length < 2 || w.length > 14) return false;
+        const d = editDistance(w, q);
+        // allow small distance relative to length
+        return d <= (q.length <= 4 ? 1 : 2);
+      });
+      if (close) hits += 1;
+    }
+  }
+
+  const ratio = hits / Math.max(1, queryTokens.length);
+  return Math.round(clamp(ratio * 100, 0, 100));
+}
+
+// -------------------- Images --------------------
 function getImageUrls(hostel: any): string[] {
   const arrays = [hostel.images, hostel.image_urls, hostel.photos];
   for (const v of arrays) if (Array.isArray(v) && v.length) return v;
@@ -71,107 +135,105 @@ function getImageUrls(hostel: any): string[] {
   return found ? [found] : [];
 }
 
-function extractPrice(hostel: any): number | null {
-  const candidates = [
-    hostel.price,
-    hostel.price_per_semester,
-    hostel.price_per_year,
-    hostel.price_per_month,
-    hostel.price_from,
-    hostel.min_price,
+// -------------------- Price extraction with unit --------------------
+type PriceUnit = "month" | "semester" | "year" | "day" | "unknown";
+
+function extractPriceWithUnit(hostel: any): { price: number | null; unit: PriceUnit } {
+  // Prefer explicit fields
+  const direct: Array<[any, PriceUnit]> = [
+    [hostel.price_per_month, "month"],
+    [hostel.price_per_semester, "semester"],
+    [hostel.price_per_year, "year"],
+    [hostel.price_per_day, "day"],
   ];
-  for (const c of candidates) {
-    if (typeof c === "number" && isFinite(c)) return c;
-    if (typeof c === "string") {
-      const m = c.replace(/,/g, "").match(/(\d+(\.\d+)?)/);
-      if (m) return Number(m[1]);
+
+  for (const [v, unit] of direct) {
+    if (typeof v === "number" && Number.isFinite(v)) return { price: v, unit };
+    if (typeof v === "string") {
+      const m = v.replace(/,/g, "").match(/(\d+(\.\d+)?)/);
+      if (m) return { price: Number(m[1]), unit };
     }
   }
-  return null;
+
+  // Generic numeric/string price with unknown unit
+  const candidates = [hostel.price, hostel.price_from, hostel.min_price];
+  for (const c of candidates) {
+    if (typeof c === "number" && Number.isFinite(c)) return { price: c, unit: "unknown" };
+    if (typeof c === "string") {
+      const m = c.replace(/,/g, "").match(/(\d+(\.\d+)?)/);
+      if (m) return { price: Number(m[1]), unit: "unknown" };
+    }
+  }
+
+  return { price: null, unit: "unknown" };
 }
 
-function hostelHaystack(hostel: any): { name: string; location: string; address: string; features: string } {
-  const name = getStringField(hostel, "name") || "";
-  const location = getStringField(hostel, "location") || "";
-  const address = getStringField(hostel, "address") || "";
-
-  const featuresRaw =
-    hostel.features ??
-    hostel.amenities ??
-    hostel.facilities ??
-    hostel.tags ??
-    hostel.category ??
-    hostel.room_type ??
-    hostel.roomType ??
-    hostel.type ??
-    "";
-
-  const features = toText(featuresRaw);
-
-  return { name, location, address, features };
+function formatUnit(unit: PriceUnit): string {
+  if (unit === "month") return "/mo";
+  if (unit === "semester") return "/sem";
+  if (unit === "year") return "/yr";
+  if (unit === "day") return "/day";
+  return "";
 }
 
-function isNearCampus(hostel: any): boolean {
-  const { location, address, features } = hostelHaystack(hostel);
-  const t = normalize(`${location} ${address} ${features}`);
-  return (
-    t.includes("on campus") ||
-    t.includes("near campus") ||
-    t.includes("close to campus") ||
-    t.includes("ucc") ||
-    t.includes("campus")
-  );
+// -------------------- Amenities synonyms (fixes false negatives) --------------------
+const AMENITY_SYNONYMS: Record<string, string[]> = {
+  wifi: ["wifi", "wi-fi", "internet", "wireless", "hotspot"],
+  water: ["water", "running water", "pipe borne", "pipe-borne"],
+  security: ["security", "guard", "security man", "watchman", "gated", "secure"],
+  cctv: ["cctv", "camera", "surveillance"],
+  generator: ["generator", "backup", "power backup", "light backup", "inverter"],
+  kitchen: ["kitchen", "shared kitchen", "kitchenette", "cooking"],
+  laundry: ["laundry", "washing", "washing area", "washing machine"],
+  ac: ["ac", "aircon", "air con", "air-condition", "air conditioning"],
+};
+
+const AMENITY_OPTIONS: Array<{ key: string; label: string }> = [
+  { key: "wifi", label: "Wi-Fi" },
+  { key: "water", label: "Water" },
+  { key: "security", label: "Security" },
+  { key: "cctv", label: "CCTV" },
+  { key: "generator", label: "Generator" },
+  { key: "kitchen", label: "Kitchen" },
+  { key: "laundry", label: "Laundry" },
+  { key: "ac", label: "AC" },
+];
+
+function matchesAmenityText(amenityTextNormalized: string, selected: string[]): boolean {
+  if (!selected.length) return true;
+  return selected.every((key) => {
+    const syns = AMENITY_SYNONYMS[key] ?? [key];
+    return syns.some((s) => amenityTextNormalized.includes(normalize(s)));
+  });
 }
 
-function textIncludesAny(hay: string, needles: string[]) {
-  const h = normalize(hay);
-  return needles.some((n) => h.includes(normalize(n)));
+// -------------------- Near campus (smarter heuristic + easy to extend) --------------------
+// Add/extend these based on your real geography. Keeps current design; improves accuracy instantly.
+const NEAR_CAMPUS_AREAS = [
+  "ayensu",
+  "amamoma",
+  "kwaprow",
+  "ape wosika",
+  "new site",
+  "old site",
+  "kakumdo",
+];
+
+function isNearCampusFromIndex(locationNorm: string, addressNorm: string, featuresNorm: string): boolean {
+  const combined = `${locationNorm} ${addressNorm} ${featuresNorm}`;
+
+  if (
+    combined.includes("on campus") ||
+    combined.includes("near campus") ||
+    combined.includes("close to campus") ||
+    combined.includes("ucc") ||
+    combined.includes("campus")
+  ) return true;
+
+  return NEAR_CAMPUS_AREAS.some((a) => combined.includes(a));
 }
 
-function safeNumberInput(v: string): number | null {
-  const s = v.replace(/,/g, "").trim();
-  if (!s) return null;
-  const n = Number(s);
-  return isFinite(n) ? n : null;
-}
-
-function highlightMatch(text: string, query: string) {
-  const q = normalize(query);
-  const t = String(text || "");
-  if (!q || !t) return t;
-
-  // highlight only the first token for safety + simplicity
-  const token = tokenize(q)[0];
-  if (!token) return t;
-
-  const idx = normalize(t).indexOf(token);
-  if (idx < 0) return t;
-
-  // This is a best-effort highlight (index on normalized may differ slightly).
-  // We'll do a simple, safer approach: highlight by searching case-insensitively in original text.
-  const re = new RegExp(`(${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "i");
-  const parts = t.split(re);
-  if (parts.length <= 1) return t;
-
-  return (
-    <span>
-      {parts.map((p, i) =>
-        re.test(p) ? (
-          <mark
-            key={i}
-            className="rounded bg-emerald-100 px-1 py-0.5 font-extrabold text-emerald-900"
-          >
-            {p}
-          </mark>
-        ) : (
-          <span key={i}>{p}</span>
-        )
-      )}
-    </span>
-  );
-}
-
-// -------------------- Intent / NLP-ish parsing --------------------
+// -------------------- Intent parsing --------------------
 type Intent = {
   queryTokens: string[];
   priceMax?: number;
@@ -179,7 +241,7 @@ type Intent = {
   wantsCheap?: boolean;
   nearCampus?: boolean;
   roomTypeHints: string[];
-  amenityHints: string[];
+  amenityHints: string[]; // keys (wifi/security etc.)
 };
 
 function parseIntent(raw: string): Intent {
@@ -191,13 +253,13 @@ function parseIntent(raw: string): Intent {
   const priceMaxMatch = q.match(/(under|below|max|less than)\s+(\d{2,6})/) || q.match(/<\s*(\d{2,6})/);
   if (priceMaxMatch) {
     const n = Number(priceMaxMatch[2] ?? priceMaxMatch[1]);
-    if (isFinite(n)) intent.priceMax = n;
+    if (Number.isFinite(n)) intent.priceMax = n;
   }
 
   const priceMinMatch = q.match(/(over|above|min|more than)\s+(\d{2,6})/) || q.match(/>\s*(\d{2,6})/);
   if (priceMinMatch) {
     const n = Number(priceMinMatch[2] ?? priceMinMatch[1]);
-    if (isFinite(n)) intent.priceMin = n;
+    if (Number.isFinite(n)) intent.priceMin = n;
   }
 
   if (tokens.includes("cheap") || tokens.includes("budget") || tokens.includes("affordable")) {
@@ -214,7 +276,7 @@ function parseIntent(raw: string): Intent {
     intent.nearCampus = true;
   }
 
-  // room type hints (Ghana terms)
+  // room type hints (ghana terms)
   const roomTypeMap: Array<[string[], string]> = [
     [["self", "con"], "self-contained"],
     [["self-contained"], "self-contained"],
@@ -232,15 +294,63 @@ function parseIntent(raw: string): Intent {
     if (hit && !intent.roomTypeHints.includes(label)) intent.roomTypeHints.push(label);
   }
 
-  const amenityKeywords = ["wifi", "water", "security", "cctv", "generator", "backup", "kitchen", "bathroom", "toilet", "ac", "aircon", "laundry"];
-  for (const k of amenityKeywords) {
-    if (tokens.includes(k)) intent.amenityHints.push(k);
+  // amenity hints from query → mapped to keys
+  const qNorm = q;
+  for (const k of Object.keys(AMENITY_SYNONYMS)) {
+    const syns = AMENITY_SYNONYMS[k] ?? [];
+    if (syns.some((s) => qNorm.includes(normalize(s)))) intent.amenityHints.push(k);
   }
+
+  // unique
+  intent.amenityHints = Array.from(new Set(intent.amenityHints));
 
   return intent;
 }
 
-// -------------------- UI components (same design language) --------------------
+// -------------------- Stable id (fixes missing hostel.id issues) --------------------
+function stableHash(input: string): string {
+  // small deterministic hash (djb2-ish)
+  let h = 5381;
+  const s = input || "";
+  for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(16);
+}
+
+function getStableId(hostel: any): string {
+  const id = hostel?.id ?? hostel?.uuid ?? hostel?.slug;
+  if (typeof id === "string" && id.trim()) return id;
+  if (typeof id === "number" && Number.isFinite(id)) return String(id);
+  const name = getStringField(hostel, "name") || "";
+  const loc = getStringField(hostel, "location") || getStringField(hostel, "address") || "";
+  return `hostel_${stableHash(normalize(`${name}|${loc}`))}`;
+}
+
+// -------------------- Safer highlight (no weird mismatches) --------------------
+function highlight(text: string, query: string) {
+  const original = String(text || "");
+  const token = tokenize(query)[0];
+  if (!token) return original;
+
+  // Find in original case-insensitively
+  const re = new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  const m = original.match(re);
+  if (!m || m.index == null) return original;
+
+  const start = m.index;
+  const end = start + m[0].length;
+
+  return (
+    <span>
+      {original.slice(0, start)}
+      <mark className="rounded bg-emerald-100 px-1 py-0.5 font-extrabold text-emerald-900">
+        {original.slice(start, end)}
+      </mark>
+      {original.slice(end)}
+    </span>
+  );
+}
+
+// -------------------- UI Bits (same design language) --------------------
 function Chip({
   label,
   active,
@@ -250,7 +360,7 @@ function Chip({
   label: string;
   active?: boolean;
   onClick: () => void;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <button
@@ -270,13 +380,7 @@ function Chip({
   );
 }
 
-function Pill({
-  label,
-  onClear,
-}: {
-  label: string;
-  onClear: () => void;
-}) {
+function Pill({ label, onClear }: { label: string; onClear: () => void }) {
   return (
     <button
       onClick={onClear}
@@ -292,44 +396,122 @@ function Pill({
   );
 }
 
-// -------------------- Mosaic Card (same) with quick facts chips --------------------
+// -------------------- Index build (PERFORMANCE FIX) --------------------
+type IndexedHostel = {
+  id: string;
+  hostel: any;
+  name: string;
+  location: string;
+  address: string;
+
+  nameN: string;
+  locationN: string;
+  addressN: string;
+  featuresN: string;
+  roomTypeN: string;
+  amenityN: string;
+
+  imgCount: number;
+  hasImages: number;
+
+  price: number | null;
+  priceUnit: PriceUnit;
+  hasPrice: number;
+
+  nearCampus: boolean;
+};
+
+function buildIndex(hostels: any[]): IndexedHostel[] {
+  return hostels.map((h) => {
+    const id = getStableId(h);
+    const name = getStringField(h, "name") || "Hostel";
+    const location = getStringField(h, "location") || "";
+    const address = getStringField(h, "address") || "";
+
+    const featuresRaw =
+      h.features ??
+      h.amenities ??
+      h.facilities ??
+      h.tags ??
+      h.description ??
+      h.category ??
+      "";
+
+    const roomRaw = h.room_type ?? h.roomType ?? h.type ?? h.category ?? "";
+    const amenityRaw = h.amenities ?? h.features ?? h.facilities ?? h.tags ?? "";
+
+    const nameN = normalize(name);
+    const locationN = normalize(location);
+    const addressN = normalize(address);
+    const featuresN = normalize(toText(featuresRaw));
+    const roomTypeN = normalize(toText(roomRaw));
+    const amenityN = normalize(toText(amenityRaw));
+
+    const imgs = getImageUrls(h);
+    const imgCount = imgs.length;
+    const hasImages = imgCount > 0 ? 1 : 0;
+
+    const { price, unit } = extractPriceWithUnit(h);
+    const hasPrice = price != null ? 1 : 0;
+
+    const nearCampus = isNearCampusFromIndex(locationN, addressN, featuresN);
+
+    return {
+      id,
+      hostel: h,
+      name,
+      location,
+      address,
+      nameN,
+      locationN,
+      addressN,
+      featuresN,
+      roomTypeN,
+      amenityN,
+      imgCount,
+      hasImages,
+      price,
+      priceUnit: unit,
+      hasPrice,
+      nearCampus,
+    };
+  });
+}
+
+// -------------------- Mosaic Card --------------------
 function SearchMosaicCard({
-  hostel,
+  item,
   onOpen,
   query,
 }: {
-  hostel: any;
+  item: IndexedHostel;
   onOpen: () => void;
   query: string;
 }) {
-  const name = getStringField(hostel, "name") || "Hostel";
-  const location = getStringField(hostel, "location") || getStringField(hostel, "address");
-  const images = getImageUrls(hostel);
-
+  const images = getImageUrls(item.hostel);
   const safeImages = [...images];
   while (safeImages.length < 5 && safeImages.length > 0) safeImages.push(safeImages[0]);
-
   const [a, b, c, d, e] = safeImages;
 
-  const price = extractPrice(hostel);
+  const unitLabel = formatUnit(item.priceUnit);
+  const showPriceChip = item.price != null && item.priceUnit !== "unknown"; // avoid misleading unit
+  const showPriceSoft = item.price != null && item.priceUnit === "unknown"; // show, but without unit
 
-  // quick facts (best-effort; only show if present)
-  const roomTypeText = normalize(toText(hostel.room_type ?? hostel.roomType ?? hostel.category ?? hostel.type ?? ""));
-  const featuresText = normalize(toText(hostel.amenities ?? hostel.features ?? hostel.facilities ?? hostel.tags ?? ""));
-  const near = isNearCampus(hostel);
+  // Quick chips (max 4)
+  const chips: string[] = [];
 
-  const quickChips: Array<{ label: string }> = [];
-  if (price != null) quickChips.push({ label: `From ${price.toLocaleString()}` });
-  if (textIncludesAny(roomTypeText, ["self-contained"])) quickChips.push({ label: "Self-contained" });
-  else if (textIncludesAny(roomTypeText, ["shared", "2 in 1", "two in one"])) quickChips.push({ label: "Shared" });
-  else if (textIncludesAny(roomTypeText, ["single"])) quickChips.push({ label: "Single room" });
+  if (showPriceChip) chips.push(`From ${item.price!.toLocaleString()}${unitLabel}`);
+  else if (showPriceSoft) chips.push(`From ${item.price!.toLocaleString()}`);
 
-  if (near) quickChips.push({ label: "Near campus" });
-  if (textIncludesAny(featuresText, ["wifi"])) quickChips.push({ label: "Wi-Fi" });
-  if (textIncludesAny(featuresText, ["security", "cctv"])) quickChips.push({ label: "Security" });
+  if (item.roomTypeN.includes("self-contained") || item.roomTypeN.includes("self con")) chips.push("Self-contained");
+  else if (item.roomTypeN.includes("shared") || item.roomTypeN.includes("2 in 1") || item.roomTypeN.includes("two in one")) chips.push("Shared");
+  else if (item.roomTypeN.includes("single")) chips.push("Single room");
 
-  // keep it clean: max 4 chips
-  const displayChips = quickChips.slice(0, 4);
+  if (item.nearCampus) chips.push("Near campus");
+  if (matchesAmenityText(item.amenityN, ["wifi"])) chips.push("Wi-Fi");
+  if (matchesAmenityText(item.amenityN, ["security"]) || matchesAmenityText(item.amenityN, ["cctv"])) chips.push("Security");
+
+  const displayChips = chips.slice(0, 4);
 
   return (
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
@@ -401,21 +583,19 @@ function SearchMosaicCard({
       <div className="px-2 pb-2">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-xl font-extrabold text-slate-900 group-hover/card:text-emerald-700 transition-colors">
-            {highlightMatch(name, query)}
+            {highlight(item.name, query)}
           </h3>
 
-          {price !== null && (
-            <div className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>AI ranked</span>
-            </div>
-          )}
+          <div className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI ranked</span>
+          </div>
         </div>
 
-        {location && (
+        {(item.location || item.address) && (
           <div className="mt-1 flex items-center gap-1.5 text-slate-500 text-sm font-medium">
             <MapPin className="h-4 w-4 text-slate-400" />
-            <span>{highlightMatch(location, query)}</span>
+            <span>{highlight(item.location || item.address, query)}</span>
           </div>
         )}
 
@@ -423,10 +603,10 @@ function SearchMosaicCard({
           <div className="mt-3 flex flex-wrap gap-2">
             {displayChips.map((c) => (
               <span
-                key={c.label}
+                key={c}
                 className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-extrabold text-slate-700"
               >
-                {c.label}
+                {c}
               </span>
             ))}
           </div>
@@ -436,27 +616,16 @@ function SearchMosaicCard({
   );
 }
 
+// -------------------- Filters --------------------
 type SortMode = "recommended" | "name_az" | "price_low";
 type RoomTypeFilter = "Any" | "Self-contained" | "Single" | "Shared" | "Chamber & Hall";
 type DistanceFilter = "Any" | "Near campus";
 
-const AMENITY_OPTIONS: Array<{ key: string; label: string }> = [
-  { key: "wifi", label: "Wi-Fi" },
-  { key: "water", label: "Water" },
-  { key: "security", label: "Security" },
-  { key: "cctv", label: "CCTV" },
-  { key: "generator", label: "Generator" },
-  { key: "kitchen", label: "Kitchen" },
-  { key: "laundry", label: "Laundry" },
-  { key: "ac", label: "AC" },
-];
-
-// -------------------- Main Page --------------------
 export default function SearchPage({ onNavigate }: SearchPageProps) {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search + debounce (predictive / instant)
+  // Search
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -467,34 +636,33 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
 
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
 
-  // Extra modern filters (faceted)
   const [roomTypeFilter, setRoomTypeFilter] = useState<RoomTypeFilter>("Any");
   const [distanceFilter, setDistanceFilter] = useState<DistanceFilter>("Any");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [priceMinStr, setPriceMinStr] = useState("");
   const [priceMaxStr, setPriceMaxStr] = useState("");
 
-  // Pagination (mobile performance)
+  // Mobile performance pagination
   const [visibleCount, setVisibleCount] = useState(12);
 
-  // Autocomplete / Suggestions (animated)
+  // Autocomplete
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
 
-  // Debounce typing: smooth, app-like
+  // Debounce typing
   useEffect(() => {
     setIsTyping(true);
     const t = window.setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setIsTyping(false);
-      setVisibleCount(12); // reset pagination when searching
+      setVisibleCount(12);
     }, 180);
     return () => window.clearTimeout(t);
   }, [searchTerm]);
 
-  // Load data once
+  // Load
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -502,7 +670,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
         const data = await getHostels();
         const list = Array.isArray(data) ? [...data] : [];
 
-        // Manual hostels (as you had)
+        // Manual hostels (your existing behavior)
         const manualHostels = [
           {
             id: "nana-agyoma-manual",
@@ -516,6 +684,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
               "https://i.imgur.com/CKdT7Di.jpeg",
               "https://i.imgur.com/Ci2Vn7D.jpeg",
             ],
+            // Example (optional): price_per_semester: 1200
           },
           {
             id: "adoration-home-plus-manual",
@@ -547,55 +716,22 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     void load();
   }, []);
 
-  // Clean unique locations
+  // Build index ONCE per hostels update (big perf win)
+  const indexed = useMemo(() => buildIndex(hostels), [hostels]);
+
+  // Clean unique locations (from indexed for consistency)
   const uniqueLocations = useMemo(() => {
-    const locs = new Set(
-      hostels
-        .map((h) => h.location || h.address || "")
-        .filter(Boolean)
-        .map((l) => String(l))
-    );
-    const clean = Array.from(locs)
-      .map((l) => l.split(",")[0].trim())
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort((a, b) => a.localeCompare(b));
+    const locs = new Set<string>();
+    for (const it of indexed) {
+      const raw = (it.location || it.address || "").trim();
+      if (!raw) continue;
+      locs.add(raw.split(",")[0].trim());
+    }
+    const clean = Array.from(locs).filter(Boolean).sort((a, b) => a.localeCompare(b));
     return ["All", ...clean];
-  }, [hostels]);
+  }, [indexed]);
 
-  // Build suggestions list (mobile-first + AI-era)
-  const suggestions = useMemo(() => {
-    const q = normalize(searchTerm);
-    const base = [
-      'under 800',
-      'under 1000 near campus',
-      'self con Ayensu',
-      'Amamoma single room',
-      'wifi + security',
-      'near campus',
-      'shared room',
-      'self-contained',
-      'budget',
-    ];
-
-    const locSuggestions = uniqueLocations
-      .filter((l) => l !== "All")
-      .slice(0, 10)
-      .map((l) => `${l}`);
-
-    const merged = Array.from(new Set([...base, ...locSuggestions]));
-
-    if (!q) return merged.slice(0, 10);
-
-    const scored = merged
-      .map((s) => ({ s, score: fuzzyTokenMatch(s, tokenize(q)) }))
-      .filter((x) => x.score > 0 || normalize(x.s).includes(q))
-      .sort((a, b) => b.score - a.score)
-      .map((x) => x.s);
-
-    return scored.slice(0, 10);
-  }, [searchTerm, uniqueLocations]);
-
-  // Close suggestions on outside click
+  // Outside click closes suggestions
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -608,15 +744,96 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  // Intent parse (AI-like)
+  // Intent (AI-like)
   const intent = useMemo(() => parseIntent(debouncedSearch), [debouncedSearch]);
 
-  // Price from UI numeric fields (these override intent if provided)
+  // Price inputs override intent
   const priceMinUI = useMemo(() => safeNumberInput(priceMinStr), [priceMinStr]);
   const priceMaxUI = useMemo(() => safeNumberInput(priceMaxStr), [priceMaxStr]);
 
-  // Main scoring + filtering + faceted filters
-  const scoredHostels = useMemo(() => {
+  // Suggestions: based on real data + smart templates
+  const suggestions = useMemo(() => {
+    const q = normalize(searchTerm);
+    const templates = [
+      "under 800 near campus",
+      "under 1000",
+      "self con Ayensu",
+      "Amamoma single room",
+      "wifi + security",
+      "near campus",
+      "shared room",
+      "self-contained",
+      "budget",
+    ];
+
+    const locs = uniqueLocations.filter((l) => l !== "All").slice(0, 12);
+
+    // common tokens from dataset (lightweight)
+    const featureHints: string[] = [];
+    const roomHints: string[] = [];
+    for (const it of indexed.slice(0, 80)) {
+      if (it.roomTypeN.includes("self-contained")) roomHints.push("self-contained");
+      if (it.roomTypeN.includes("shared") || it.roomTypeN.includes("2 in 1")) roomHints.push("shared room");
+      if (it.roomTypeN.includes("single")) roomHints.push("single room");
+      if (it.amenityN.includes("wifi") || it.amenityN.includes("internet")) featureHints.push("wifi");
+      if (it.amenityN.includes("security") || it.amenityN.includes("guard")) featureHints.push("security");
+      if (it.amenityN.includes("generator") || it.amenityN.includes("backup")) featureHints.push("generator");
+    }
+
+    const merged = Array.from(
+      new Set([
+        ...templates,
+        ...locs,
+        ...Array.from(new Set(roomHints)).slice(0, 4),
+        ...Array.from(new Set(featureHints)).slice(0, 4),
+      ])
+    );
+
+    if (!q) return merged.slice(0, 10);
+
+    const qTokens = tokenize(q);
+    return merged
+      .map((s) => ({ s, score: fuzzyScore(s, qTokens) }))
+      .filter((x) => x.score > 0 || normalize(x.s).includes(q))
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.s)
+      .slice(0, 10);
+  }, [searchTerm, uniqueLocations, indexed]);
+
+  const applySuggestion = (s: string) => {
+    setSearchTerm(s);
+    setShowSuggestions(false);
+    setActiveSuggestion(0);
+    inputRef.current?.focus();
+  };
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === "Escape") setShowSuggestions(false);
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion((p) => Math.min(p + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion((p) => Math.max(p - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      applySuggestion(suggestions[activeSuggestion] ?? searchTerm);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowSuggestions(false);
+    }
+  };
+
+  const toggleAmenity = (key: string) => {
+    setSelectedAmenities((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
+    setVisibleCount(12);
+  };
+
+  // -------------------- Main filtering + ranking (FAST, uses index) --------------------
+  const scored = useMemo(() => {
     const locFilterNorm = normalize(locationFilter === "All" ? "" : locationFilter);
 
     const roomTypeNeedles =
@@ -630,113 +847,95 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
               ? ["shared", "2 in 1", "two in one"]
               : ["chamber", "hall", "chamber & hall"];
 
-    const amenityNeedles = selectedAmenities.map((k) => k);
-
     const wantNear = distanceFilter === "Near campus";
 
     const priceMin = priceMinUI ?? intent.priceMin;
     const priceMax = priceMaxUI ?? intent.priceMax;
 
+    // Merge amenities: explicit selection + inferred intent (from query)
+    const amenityKeys = Array.from(new Set([...selectedAmenities, ...intent.amenityHints]));
+
     const qTokens = intent.queryTokens;
 
-    const results = hostels
-      .map((hostel) => {
-        const { name, location, address, features } = hostelHaystack(hostel);
-
-        const nameN = normalize(name);
-        const locN = normalize(location);
-        const addrN = normalize(address);
-        const featN = normalize(features);
-
+    const results = indexed
+      .map((it) => {
         // Location dropdown (case-insensitive)
         const matchesLocation =
           locationFilter === "All" ||
-          (!!locFilterNorm && (locN.includes(locFilterNorm) || addrN.includes(locFilterNorm)));
+          (!!locFilterNorm && (it.locationN.includes(locFilterNorm) || it.addressN.includes(locFilterNorm)));
 
-        const p = extractPrice(hostel);
-        const matchesPriceMin = priceMin == null || p == null ? true : p >= priceMin;
-        const matchesPriceMax = priceMax == null || p == null ? true : p <= priceMax;
+        // Distance
+        const matchesDistance = wantNear ? it.nearCampus : true;
 
-        const near = isNearCampus(hostel);
-        const matchesDistance = wantNear ? near : true;
+        // Room type
+        const matchesRoom = roomTypeNeedles.length ? roomTypeNeedles.some((n) => it.roomTypeN.includes(normalize(n))) : true;
 
-        // Room type filter (best-effort on text)
-        const roomText = normalize(toText(hostel.room_type ?? hostel.roomType ?? hostel.category ?? hostel.type ?? hostel.features ?? ""));
-        const matchesRoom = roomTypeNeedles.length ? textIncludesAny(roomText, roomTypeNeedles) : true;
+        // Amenities (synonyms)
+        const matchesAmenities = matchesAmenityText(it.amenityN, amenityKeys);
 
-        // Amenity filter (must include all selected)
-        const amenityText = normalize(toText(hostel.amenities ?? hostel.features ?? hostel.facilities ?? hostel.tags ?? ""));
-        const matchesAmenity =
-          amenityNeedles.length === 0
-            ? true
-            : amenityNeedles.every((k) => amenityText.includes(normalize(k)));
+        // Price
+        const matchesPriceMin = priceMin == null || it.price == null ? true : it.price >= priceMin;
+        const matchesPriceMax = priceMax == null || it.price == null ? true : it.price <= priceMax;
 
         // Fuzzy relevance
-        const sName = fuzzyTokenMatch(nameN, qTokens);
-        const sLoc = fuzzyTokenMatch(locN, qTokens);
-        const sAddr = fuzzyTokenMatch(addrN, qTokens);
-        const sFeat = fuzzyTokenMatch(featN, qTokens);
+        const sName = fuzzyScore(it.nameN, qTokens);
+        const sLoc = fuzzyScore(it.locationN, qTokens);
+        const sAddr = fuzzyScore(it.addressN, qTokens);
+        const sFeat = fuzzyScore(it.featuresN, qTokens);
 
-        // Completeness signals
-        const imgCount = getImageUrls(hostel).length;
-        const hasImages = imgCount > 0 ? 1 : 0;
-        const hasPrice = extractPrice(hostel) != null ? 1 : 0;
-
-        // Base score (weighted)
-        let score =
-          sName * 3 +
-          sLoc * 2 +
-          sAddr * 1 +
-          sFeat * 1 +
-          hasImages * 60 +
-          hasPrice * 40;
-
-        if (!qTokens.length) score = hasImages * 60 + hasPrice * 40;
-
-        // Intent boosts
-        if (intent.wantsCheap && p != null) score += Math.max(0, 8000 - p) / 50;
-        if (intent.nearCampus && near) score += 80;
-
-        // Explicit filter boosts (so filtered results feel right)
-        if (wantNear && near) score += 60;
-        if (roomTypeNeedles.length && matchesRoom) score += 50;
-        if (amenityNeedles.length && matchesAmenity) score += 30;
-
-        // Query gate: if user typed something, require some signal OR strong filters
         const hasQuery = qTokens.length > 0;
         const anyFuzzyHit = sName > 0 || sLoc > 0 || sAddr > 0 || sFeat > 0;
 
+        // Query gate: if user typed something, allow either fuzzy hits or strong faceted filters
         const passesQueryGate =
           !hasQuery ||
           anyFuzzyHit ||
+          amenityKeys.length > 0 ||
           roomTypeNeedles.length > 0 ||
-          amenityNeedles.length > 0 ||
           priceMin != null ||
           priceMax != null ||
           wantNear;
 
         const passesAll =
           matchesLocation &&
-          matchesPriceMin &&
-          matchesPriceMax &&
           matchesDistance &&
           matchesRoom &&
-          matchesAmenity &&
+          matchesAmenities &&
+          matchesPriceMin &&
+          matchesPriceMax &&
           passesQueryGate;
 
-        return { hostel, score, price: p, passesAll };
+        // Relevance score (weighted, plus completeness)
+        let score =
+          sName * 3 +
+          sLoc * 2 +
+          sAddr * 1 +
+          sFeat * 1 +
+          it.hasImages * 60 +
+          it.hasPrice * 40;
+
+        // If empty query: prioritize complete listings
+        if (!qTokens.length) score = it.hasImages * 60 + it.hasPrice * 40;
+
+        // Intent boosts (kept gentle so it never feels “random”)
+        if (intent.nearCampus && it.nearCampus) score += 80;
+        if (intent.wantsCheap && it.price != null) score += Math.max(0, 8000 - it.price) / 50;
+
+        // Facet boosts (so filtered items feel “correct” at the top)
+        if (wantNear && it.nearCampus) score += 60;
+        if (roomTypeNeedles.length && matchesRoom) score += 40;
+        if (amenityKeys.length && matchesAmenities) score += 30;
+
+        return { it, score, passesAll };
       })
       .filter((x) => x.passesAll);
 
-    const sorted = [...results].sort((a, b) => {
-      if (sortMode === "name_az") {
-        const an = normalize(getStringField(a.hostel, "name") || "");
-        const bn = normalize(getStringField(b.hostel, "name") || "");
-        return an.localeCompare(bn);
-      }
+    // Sorting
+    const sorted = results.sort((a, b) => {
+      if (sortMode === "name_az") return a.it.nameN.localeCompare(b.it.nameN);
       if (sortMode === "price_low") {
-        const ap = a.price ?? Number.POSITIVE_INFINITY;
-        const bp = b.price ?? Number.POSITIVE_INFINITY;
+        const ap = a.it.price ?? Number.POSITIVE_INFINITY;
+        const bp = b.it.price ?? Number.POSITIVE_INFINITY;
         if (ap !== bp) return ap - bp;
         return b.score - a.score;
       }
@@ -745,63 +944,44 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
 
     return sorted;
   }, [
-    hostels,
+    indexed,
     intent,
     locationFilter,
-    sortMode,
     roomTypeFilter,
     distanceFilter,
     selectedAmenities,
     priceMinUI,
     priceMaxUI,
+    sortMode,
   ]);
 
-  const filteredHostels = useMemo(() => scoredHostels.map((x) => x.hostel), [scoredHostels]);
+  const filteredItems = useMemo(() => scored.map((x) => x.it), [scored]);
 
-  // Pagination slice (performance / mobile)
-  const pagedHostels = useMemo(() => filteredHostels.slice(0, visibleCount), [filteredHostels, visibleCount]);
+  // Pagination slice
+  const paged = useMemo(() => filteredItems.slice(0, visibleCount), [filteredItems, visibleCount]);
 
-  // Active filter pills
+  // Pills
   const activePills = useMemo(() => {
     const pills: Array<{ key: string; label: string; onClear: () => void }> = [];
 
-    if (searchTerm.trim()) {
-      pills.push({ key: "search", label: `Search: ${searchTerm.trim()}`, onClear: () => setSearchTerm("") });
-    }
-    if (locationFilter !== "All") {
-      pills.push({ key: "location", label: `Location: ${locationFilter}`, onClear: () => setLocationFilter("All") });
-    }
-    if (sortMode !== "recommended") {
-      pills.push({
-        key: "sort",
-        label: sortMode === "price_low" ? "Sort: Lowest price" : "Sort: Name A–Z",
-        onClear: () => setSortMode("recommended"),
-      });
-    }
-    if (roomTypeFilter !== "Any") {
-      pills.push({ key: "room", label: `Room: ${roomTypeFilter}`, onClear: () => setRoomTypeFilter("Any") });
-    }
-    if (distanceFilter !== "Any") {
-      pills.push({ key: "distance", label: `Distance: ${distanceFilter}`, onClear: () => setDistanceFilter("Any") });
-    }
+    if (searchTerm.trim()) pills.push({ key: "search", label: `Search: ${searchTerm.trim()}`, onClear: () => setSearchTerm("") });
+    if (locationFilter !== "All") pills.push({ key: "location", label: `Location: ${locationFilter}`, onClear: () => setLocationFilter("All") });
+    if (sortMode !== "recommended") pills.push({ key: "sort", label: sortMode === "price_low" ? "Sort: Lowest price" : "Sort: Name A–Z", onClear: () => setSortMode("recommended") });
+
+    if (roomTypeFilter !== "Any") pills.push({ key: "room", label: `Room: ${roomTypeFilter}`, onClear: () => setRoomTypeFilter("Any") });
+    if (distanceFilter !== "Any") pills.push({ key: "distance", label: `Distance: ${distanceFilter}`, onClear: () => setDistanceFilter("Any") });
+
     if (selectedAmenities.length) {
       selectedAmenities.forEach((a) => {
         const label = AMENITY_OPTIONS.find((x) => x.key === a)?.label ?? a;
-        pills.push({
-          key: `amenity_${a}`,
-          label: `Amenity: ${label}`,
-          onClear: () => setSelectedAmenities((prev) => prev.filter((x) => x !== a)),
-        });
+        pills.push({ key: `amenity_${a}`, label: `Amenity: ${label}`, onClear: () => setSelectedAmenities((prev) => prev.filter((x) => x !== a)) });
       });
     }
-    if (priceMinStr.trim()) {
-      pills.push({ key: "pmin", label: `Min: ${priceMinStr.trim()}`, onClear: () => setPriceMinStr("") });
-    }
-    if (priceMaxStr.trim()) {
-      pills.push({ key: "pmax", label: `Max: ${priceMaxStr.trim()}`, onClear: () => setPriceMaxStr("") });
-    }
 
-    // Intent-based pills (only when user typed them)
+    if (priceMinStr.trim()) pills.push({ key: "pmin", label: `Min: ${priceMinStr.trim()}`, onClear: () => setPriceMinStr("") });
+    if (priceMaxStr.trim()) pills.push({ key: "pmax", label: `Max: ${priceMaxStr.trim()}`, onClear: () => setPriceMaxStr("") });
+
+    // Intent pill for near campus if user typed it
     if (intent.nearCampus && searchTerm.trim()) {
       pills.push({
         key: "intent_near",
@@ -844,49 +1024,16 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     setVisibleCount(12);
   };
 
-  // Subtle transitions on results while typing/loading
+  // Smooth transitions while typing/loading
   const showResultsFade = loading || isTyping;
 
-  // Mobile filter drawer motion (slide + fade)
+  // Mobile drawer motion
   const filtersOpen = showFilters;
-
-  const toggleAmenity = (key: string) => {
-    setSelectedAmenities((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
-    setVisibleCount(12);
-  };
-
-  const applySuggestion = (s: string) => {
-    setSearchTerm(s);
-    setShowSuggestions(false);
-    setActiveSuggestion(0);
-    inputRef.current?.focus();
-  };
-
-  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === "Escape") setShowSuggestions(false);
-      return;
-    }
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveSuggestion((p) => Math.min(p + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveSuggestion((p) => Math.max(p - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      applySuggestion(suggestions[activeSuggestion] ?? searchTerm);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setShowSuggestions(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-24 px-4">
       <div className="mx-auto max-w-5xl">
-        {/* Mobile-first sticky search zone */}
+        {/* Sticky mobile-first search zone */}
         <div className="mb-8 md:mb-10">
           <div className="md:static sticky top-0 z-30 -mx-4 px-4 pt-4 pb-4 bg-slate-50/90 backdrop-blur border-b border-slate-100 md:border-0">
             <h1 className="text-3xl font-extrabold text-slate-900 mb-4 md:mb-6">Search Hostels</h1>
@@ -913,7 +1060,6 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                   onKeyDown={onInputKeyDown}
                 />
 
-                {/* clear X */}
                 {searchTerm.trim() && (
                   <button
                     type="button"
@@ -925,12 +1071,10 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                   </button>
                 )}
 
-                {/* typing indicator */}
                 <div className={`mt-2 text-xs font-extrabold ${isTyping ? "text-emerald-600" : "text-slate-400"} transition-colors`}>
                   {isTyping ? "Searching…" : ""}
                 </div>
 
-                {/* suggestions dropdown */}
                 {showSuggestions && suggestions.length > 0 && (
                   <div
                     ref={suggestionsRef}
@@ -949,7 +1093,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                     <div className="max-h-72 overflow-auto">
                       {suggestions.map((s, idx) => (
                         <button
-                          key={s}
+                          key={`${s}-${idx}`}
                           type="button"
                           onClick={() => applySuggestion(s)}
                           className={[
@@ -958,7 +1102,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                           ].join(" ")}
                           onMouseEnter={() => setActiveSuggestion(idx)}
                         >
-                          {highlightMatch(s, searchTerm)}
+                          {highlight(s, searchTerm)}
                         </button>
                       ))}
                     </div>
@@ -976,7 +1120,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                   <SlidersHorizontal className="h-4 w-4" /> Filters
                 </button>
 
-                {/* Desktop filters container */}
+                {/* Desktop compact controls */}
                 <div className="hidden md:flex flex-col md:flex-row gap-2 w-full md:w-auto">
                   {/* Location */}
                   <div className="relative min-w-[200px]">
@@ -1021,13 +1165,13 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
               </div>
             </div>
 
-            {/* Result count + Clear all */}
+            {/* Result count + clear all */}
             <div className="mt-4 flex items-center justify-between gap-3">
               <div className="text-sm font-bold text-slate-700">
-                {loading ? "Loading hostels…" : `${filteredHostels.length.toLocaleString()} hostels found`}
+                {loading ? "Loading hostels…" : `${filteredItems.length.toLocaleString()} hostels found`}
               </div>
 
-              {(activePills.length > 0) && (
+              {activePills.length > 0 && (
                 <button
                   onClick={clearAll}
                   className="text-sm font-extrabold text-slate-900 hover:text-emerald-700 transition-colors"
@@ -1047,7 +1191,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
               </div>
             )}
 
-            {/* Mobile filter drawer (slide + fade) */}
+            {/* Mobile filter drawer */}
             <div
               className={[
                 "md:hidden mt-4 overflow-hidden transition-all duration-300 ease-out",
@@ -1184,9 +1328,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                       className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none shadow-sm"
                     />
                   </div>
-                  <div className="mt-2 text-xs font-bold text-slate-500">
-                    Tip: You can also type “under 800” in search.
-                  </div>
+                  <div className="mt-2 text-xs font-bold text-slate-500">Tip: You can also type “under 800” in search.</div>
                 </div>
 
                 {/* Amenities */}
@@ -1223,7 +1365,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
               </div>
             </div>
 
-            {/* Desktop “quick filters” row (no drawer; stays clean) */}
+            {/* Desktop “quick filters” bar (kept, but lightweight) */}
             <div className="hidden md:block mt-5">
               <div className="rounded-[1.5rem] border-2 border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap gap-2 items-center">
@@ -1257,17 +1399,8 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                     }}
                   />
 
-                  <Chip
-                    label="Wi-Fi"
-                    active={selectedAmenities.includes("wifi")}
-                    onClick={() => toggleAmenity("wifi")}
-                  />
-
-                  <Chip
-                    label="Security"
-                    active={selectedAmenities.includes("security")}
-                    onClick={() => toggleAmenity("security")}
-                  />
+                  <Chip label="Wi-Fi" active={selectedAmenities.includes("wifi")} onClick={() => toggleAmenity("wifi")} />
+                  <Chip label="Security" active={selectedAmenities.includes("security")} onClick={() => toggleAmenity("security")} />
 
                   <div className="ml-auto flex items-center gap-2">
                     <input
@@ -1296,7 +1429,7 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
           </div>
         </div>
 
-        {/* Results section with smooth transitions */}
+        {/* Results */}
         <div className={`transition-opacity duration-300 ${showResultsFade ? "opacity-60" : "opacity-100"}`}>
           {loading ? (
             <div className="grid grid-cols-1 gap-8">
@@ -1308,21 +1441,20 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
                 </div>
               ))}
             </div>
-          ) : filteredHostels.length > 0 ? (
+          ) : filteredItems.length > 0 ? (
             <>
               <div className="grid grid-cols-1 gap-8">
-                {pagedHostels.map((hostel) => (
+                {paged.map((it) => (
                   <SearchMosaicCard
-                    key={hostel.id}
-                    hostel={hostel}
+                    key={it.id}
+                    item={it}
                     query={debouncedSearch}
-                    onOpen={() => onNavigate("detail", hostel.id)}
+                    onOpen={() => onNavigate("detail", it.id)}
                   />
                 ))}
               </div>
 
-              {/* Load more (mobile perf) */}
-              {filteredHostels.length > visibleCount && (
+              {filteredItems.length > visibleCount && (
                 <div className="mt-10 flex justify-center">
                   <button
                     type="button"
@@ -1375,4 +1507,3 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     </div>
   );
 }
- 
