@@ -8,17 +8,14 @@ import {
   ArrowUpDown,
   Sparkles,
   X,
-  Check,
-  Filter,
-  ChevronDown,
 } from "lucide-react";
-// REPO: Importing the unified data source
 import { getAllHostelsRepository } from "../lib/hostels";
 import { PageType } from "../App";
+// NEW: Import the extracted filter components
+import { MobileFilterDrawer, DesktopFilterBar, AMENITY_OPTIONS } from "./search/SearchFilters";
 
 // ----------------------------------------------------------------------
 // LAYER 1: DOMAIN & UTILS (Pure Logic)
-// Separated from the UI Component to ensure High Cohesion and Testability
 // ----------------------------------------------------------------------
 
 type Hostel = any;
@@ -338,25 +335,6 @@ const Indexer = {
 // LAYER 2: UI COMPONENTS (Pure Presentation)
 // ----------------------------------------------------------------------
 
-function Chip({ label, active, onClick, icon }: { label: string; active?: boolean; onClick: () => void; icon?: ReactNode; }) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-extrabold shadow-sm transition active:scale-[0.99]",
-        active
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:text-emerald-700",
-      ].join(" ")}
-      type="button"
-    >
-      {icon}
-      <span className="truncate max-w-[180px]">{label}</span>
-      {active ? <Check className="h-4 w-4" /> : null}
-    </button>
-  );
-}
-
 function Pill({ label, onClear }: { label: string; onClear: () => void }) {
   return (
     <button
@@ -460,17 +438,6 @@ interface SearchPageProps {
   onNavigate: (page: PageType, hostelId?: string) => void;
 }
 
-const AMENITY_OPTIONS: Array<{ key: string; label: string }> = [
-  { key: "wifi", label: "Wi-Fi" },
-  { key: "water", label: "Water" },
-  { key: "security", label: "Security" },
-  { key: "cctv", label: "CCTV" },
-  { key: "generator", label: "Generator" },
-  { key: "kitchen", label: "Kitchen" },
-  { key: "laundry", label: "Laundry" },
-  { key: "ac", label: "AC" },
-];
-
 export default function SearchPage({ onNavigate }: SearchPageProps) {
   // --- Data State ---
   const [hostels, setHostels] = useState<Hostel[]>([]);
@@ -514,7 +481,6 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     const load = async () => {
       setLoading(true);
       try {
-        // Use the new Repository method that hides manual/api distinctions
         const list = await getAllHostelsRepository();
         setHostels(list);
       } catch (err) {
@@ -629,8 +595,6 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     const templates = ["under 800 near campus", "under 1000", "self con Ayensu", "Amamoma single room", "wifi + security", "near campus", "shared room", "self-contained", "budget"];
     const locs = uniqueLocations.filter((l) => l !== "All").slice(0, 12);
     
-    // Dynamic hints from indexed data could go here...
-    
     const merged = Array.from(new Set([...templates, ...locs]));
     if (!q) return merged.slice(0, 10);
     const qTokens = TextUtils.tokenize(q);
@@ -648,10 +612,28 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
   const clearAll = () => { setSearchTerm(""); setLocationFilter("All"); setSortMode("recommended"); setRoomTypeFilter("Any"); setDistanceFilter("Any"); setSelectedAmenities([]); setPriceMinStr(""); setPriceMaxStr(""); setVisibleCount(12); };
 
   const paged = filteredItems.slice(0, visibleCount);
-  const activePills = []; // (Logic for pills is UI state, kept simple)
-  // ... Simplified pill construction for brevity in this specific refactor thought ...
+  const activePills = [];
   if (searchTerm.trim()) activePills.push({ key: "search", label: `Search: ${searchTerm}`, onClear: () => setSearchTerm("") });
-  // (Adding other pills follows same pattern)
+  if (locationFilter !== "All") activePills.push({ key: "location", label: `Location: ${locationFilter}`, onClear: () => setLocationFilter("All") });
+  if (sortMode !== "recommended") activePills.push({ key: "sort", label: sortMode === "price_low" ? "Sort: Lowest price" : "Sort: Name A–Z", onClear: () => setSortMode("recommended") });
+  if (roomTypeFilter !== "Any") activePills.push({ key: "room", label: `Room: ${roomTypeFilter}`, onClear: () => setRoomTypeFilter("Any") });
+  if (distanceFilter !== "Any") activePills.push({ key: "distance", label: `Distance: ${distanceFilter}`, onClear: () => setDistanceFilter("Any") });
+  if (selectedAmenities.length) selectedAmenities.forEach(a => activePills.push({ key: `amenity_${a}`, label: `Amenity: ${AMENITY_OPTIONS.find(o=>o.key===a)?.label||a}`, onClear: () => toggleAmenity(a) }));
+  if (priceMinStr.trim()) activePills.push({ key: "pmin", label: `Min: ${priceMinStr}`, onClear: () => setPriceMinStr("") });
+  if (priceMaxStr.trim()) activePills.push({ key: "pmax", label: `Max: ${priceMaxStr}`, onClear: () => setPriceMaxStr("") });
+  if (intent.nearCampus && searchTerm.trim()) activePills.push({ key: "intent_near", label: "Intent: Near campus", onClear: () => setSearchTerm(prev => prev.replace(/near campus|close to campus|ucc|campus/gi, "").trim()) });
+
+  const filterProps = {
+    uniqueLocations,
+    locationFilter, setLocationFilter,
+    sortMode, setSortMode,
+    roomTypeFilter, setRoomTypeFilter,
+    distanceFilter, setDistanceFilter,
+    priceMinStr, setPriceMinStr,
+    priceMaxStr, setPriceMaxStr,
+    selectedAmenities, toggleAmenity,
+    clearAll
+  };
 
   // 8. Render
   return (
@@ -710,43 +692,21 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
              {/* Pills & Counts */}
              <div className="mt-4 flex flex-wrap items-center gap-3 justify-between">
                 <div className="text-sm font-bold text-slate-700">{loading ? "Loading..." : `${filteredItems.length} hostels found`}</div>
-                {searchTerm || locationFilter!=="All" ? <button onClick={clearAll} className="text-sm font-extrabold text-slate-900 hover:text-emerald-700">Clear all</button> : null}
+                {activePills.length > 0 && <button onClick={clearAll} className="text-sm font-extrabold text-slate-900 hover:text-emerald-700">Clear all</button>}
              </div>
+             
+             {activePills.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                   {activePills.map(p => <Pill key={p.key} label={p.label} onClear={p.onClear}/>)}
+                </div>
+             )}
            </div>
            
-           {/* Mobile Drawer (Simplified for brevity) */}
-           <div className={`md:hidden mt-4 overflow-hidden transition-all duration-300 ${showFilters ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}>
-              <div className="rounded-[1.5rem] border-2 border-slate-200 bg-white p-4">
-                 {/* ... Mobile Filters Content ... */}
-                 {/* Reusing desktop logic for RoomType, Price, etc. */}
-                 <div className="grid grid-cols-2 gap-2 mb-4">
-                    <input value={priceMinStr} onChange={e=>setPriceMinStr(e.target.value)} placeholder="Min Price" className="rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-bold"/>
-                    <input value={priceMaxStr} onChange={e=>setPriceMaxStr(e.target.value)} placeholder="Max Price" className="rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-bold"/>
-                 </div>
-                 <div className="flex flex-wrap gap-2">
-                    {AMENITY_OPTIONS.map(a => <Chip key={a.key} label={a.label} active={selectedAmenities.includes(a.key)} onClick={()=>toggleAmenity(a.key)}/>)}
-                 </div>
-                 <div className="mt-4 flex gap-2">
-                    <button onClick={clearAll} className="flex-1 rounded-xl bg-slate-900 py-3 text-white font-bold">Clear</button>
-                    <button onClick={()=>setShowFilters(false)} className="flex-1 rounded-xl border-2 border-slate-200 py-3 font-bold">Apply</button>
-                 </div>
-              </div>
-           </div>
+           {/* EXTRACTED: Mobile Filter Drawer */}
+           <MobileFilterDrawer {...filterProps} showFilters={showFilters} setShowFilters={setShowFilters} />
            
-           {/* Desktop Quick Filters */}
-           <div className="hidden md:block mt-5">
-              <div className="rounded-[1.5rem] border-2 border-slate-200 bg-white p-4 shadow-sm flex flex-wrap gap-2 items-center">
-                 <span className="text-xs font-extrabold text-slate-600 mr-2">Quick filters</span>
-                 <Chip label="Near campus" active={distanceFilter==="Near campus"} onClick={()=>setDistanceFilter(prev => prev==="Any"?"Near campus":"Any")} icon={<MapPin className="h-4 w-4"/>}/>
-                 <Chip label="Self-contained" active={roomTypeFilter==="Self-contained"} onClick={()=>setRoomTypeFilter(prev => prev==="Any"?"Self-contained":"Any")}/>
-                 <Chip label="Shared" active={roomTypeFilter==="Shared"} onClick={()=>setRoomTypeFilter(prev => prev==="Any"?"Shared":"Any")}/>
-                 <Chip label="Wi-Fi" active={selectedAmenities.includes("wifi")} onClick={()=>toggleAmenity("wifi")}/>
-                 <div className="ml-auto flex items-center gap-2">
-                    <input value={priceMinStr} onChange={e=>setPriceMinStr(e.target.value)} placeholder="Min" className="w-24 rounded-xl border-2 border-slate-200 px-3 py-1.5 text-xs font-bold"/>
-                    <input value={priceMaxStr} onChange={e=>setPriceMaxStr(e.target.value)} placeholder="Max" className="w-24 rounded-xl border-2 border-slate-200 px-3 py-1.5 text-xs font-bold"/>
-                 </div>
-              </div>
-           </div>
+           {/* EXTRACTED: Desktop Quick Filters */}
+           <DesktopFilterBar {...filterProps} />
          </div>
 
          {/* Results Grid */}
