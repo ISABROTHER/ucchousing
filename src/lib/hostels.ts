@@ -43,10 +43,10 @@ const MANUAL_HOSTELS_DATA: any[] = [
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     images: [
-      { id: "img1", image_url: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=1000", display_order: 1 },
-      { id: "img2", image_url: "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&q=80&w=1000", display_order: 2 },
-      { id: "img3", image_url: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000", display_order: 3 },
-      { id: "img4", image_url: "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=1000", display_order: 4 },
+      { id: "img1", image_url: "https://i.imgur.com/luYRCIq.jpeg", display_order: 1 },
+      { id: "img2", image_url: "https://i.imgur.com/peh4mP5.jpeg", display_order: 2 },
+      { id: "img3", image_url: "https://i.imgur.com/CKdT7Di.jpeg", display_order: 3 },
+      { id: "img4", image_url: "https://i.imgur.com/Ci2Vn7D.jpeg", display_order: 4 },
     ],
     amenities: [
       { id: "a1", name: "Wi-Fi", icon: "wifi" },
@@ -73,9 +73,10 @@ const MANUAL_HOSTELS_DATA: any[] = [
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     images: [
-      { id: "img1", image_url: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&q=80&w=1000", display_order: 1 },
-      { id: "img2", image_url: "https://images.unsplash.com/photo-1595524366631-0e77d2427a92?auto=format&fit=crop&q=80&w=1000", display_order: 2 },
-      { id: "img3", image_url: "https://images.unsplash.com/photo-1595526051245-4506e0005bd0?auto=format&fit=crop&q=80&w=1000", display_order: 3 },
+      { id: "img1", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", display_order: 1 },
+      { id: "img2", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg", display_order: 2 },
+      { id: "img3", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png", display_order: 3 },
+      { id: "img4", image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", display_order: 4 }, // Added repeat to fill grid
     ],
     amenities: [
       { id: "a1", name: "Generator", icon: "zap" },
