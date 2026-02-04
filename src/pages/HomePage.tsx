@@ -10,7 +10,7 @@ interface HomePageProps {
 
 export default function HomePage({ onNavigate }: HomePageProps) {
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-20">
+    <div className="min-h-screen bg-gray-50 text-slate-900 pb-20">
       <HomeHero />
       <RoommateBanner onNavigate={onNavigate} />
       <HomeCategories onNavigate={onNavigate} />

@@ -46,7 +46,7 @@ export default function HostelDetailPage({
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 bg-[#DC143C] rounded-full animate-pulse mx-auto mb-4"></div>
           <p className="text-gray-600">Loading hostel details...</p>
@@ -58,7 +58,7 @@ export default function HostelDetailPage({
   // 2. Not Found State (Fixed the infinite load issue)
   if (!hostel) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Hostel Not Found</h2>
@@ -76,7 +76,7 @@ export default function HostelDetailPage({
 
   // 3. Success State
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
           onClick={() => onNavigate('search')}

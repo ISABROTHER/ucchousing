@@ -2,6 +2,8 @@
 // LAYER 1: ALGORITHMS & DOMAIN LOGIC
 // ----------------------------------------------------------------------
 
+import { supabase } from './supabase';
+
 export type PriceUnit = "month" | "semester" | "year" | "day" | "unknown";
 
 export type IndexedHostel = {
@@ -282,3 +284,91 @@ export const Indexer = {
     });
   },
 };
+
+// ----------------------------------------------------------------------
+// LAYER 2: DATA ACCESS FUNCTIONS
+// ----------------------------------------------------------------------
+
+export async function getAllHostelsRepository() {
+  const { data, error } = await supabase
+    .from('hostels')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getHostels() {
+  return await getAllHostelsRepository();
+}
+
+export async function getFeaturedHostels(limit: number = 6) {
+  const { data, error } = await supabase
+    .from('hostels')
+    .select('*')
+    .eq('verified', true)
+    .order('rating', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getHostelById(id: string) {
+  const { data, error } = await supabase
+    .from('hostels')
+    .select(`
+      *,
+      images:hostel_images(*),
+      amenities:hostel_amenities(*)
+    `)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getHostelsByOwner(ownerId: string) {
+  const { data, error } = await supabase
+    .from('hostels')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createHostel(hostelData: any) {
+  const { data, error } = await supabase
+    .from('hostels')
+    .insert(hostelData)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateHostel(id: string, hostelData: any) {
+  const { data, error } = await supabase
+    .from('hostels')
+    .update(hostelData)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteHostel(id: string) {
+  const { error } = await supabase
+    .from('hostels')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}

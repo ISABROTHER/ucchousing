@@ -97,7 +97,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="w-8 h-8 bg-[#DC143C] rounded-full animate-pulse"></div>
@@ -111,7 +111,7 @@ function App() {
   return (
     // We apply the MobileScaler here to wrap the entire visible application
     <MobileScaler>
-      <div className="min-h-screen w-full bg-white">
+      <div className="min-h-screen w-full bg-gray-50">
         <Navigation
           user={state.user}
           userProfile={state.userProfile}
