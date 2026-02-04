@@ -23,6 +23,38 @@ export interface HostelWithDetails extends Hostel {
   amenities: Array<{ id: string; name: string; icon: string }>;
 }
 
+// --- Repository: Manual Data Source ---
+// Encapsulated here so the UI doesn't know it exists.
+const MANUAL_HOSTELS_DATA = [
+  {
+    id: "nana-agyoma-manual",
+    name: "Nana Agyoma Hostel",
+    address: "Amamoma, UCC",
+    location: "Amamoma",
+    main_image: "https://i.imgur.com/luYRCIq.jpeg",
+    images: [
+      "https://i.imgur.com/luYRCIq.jpeg",
+      "https://i.imgur.com/peh4mP5.jpeg",
+      "https://i.imgur.com/CKdT7Di.jpeg",
+      "https://i.imgur.com/Ci2Vn7D.jpeg",
+    ],
+    // Optional: add prices or other fields to match schema if needed
+  },
+  {
+    id: "adoration-home-plus-manual",
+    name: "Adoration Home Plus Hostel",
+    address: "Ayensu, UCC",
+    location: "Ayensu",
+    main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+    images: [
+      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+      "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg",
+      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png",
+      "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+    ],
+  },
+];
+
 function validateString(value: any, fieldName: string, maxLength = 500): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new Error(`${fieldName} must be a non-empty string`);
@@ -46,6 +78,36 @@ function validateRoomType(value: any): 'dorm' | 'private' | 'mixed' {
     throw new Error('Invalid room type. Must be dorm, private, or mixed');
   }
   return value;
+}
+
+// --- Repository: Public API ---
+
+/**
+ * Fetches all hostels from the DB and merges them with manual entries.
+ * Acts as the single source of truth for "All Hostels".
+ */
+export async function getAllHostelsRepository() {
+    const { data, error } = await supabase
+        .from('hostels')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Repository fetch error:", error);
+        // Fallback to empty array or throw based on strategy
+    }
+    
+    const list = Array.isArray(data) ? [...data] : [];
+
+    // Merge manual hostels ensuring no duplicates by name
+    const existingNames = new Set(list.map((h: any) => h.name?.toLowerCase()));
+    MANUAL_HOSTELS_DATA.forEach((m) => {
+        if (m.name && !existingNames.has(m.name.toLowerCase())) {
+            list.push(m);
+        }
+    });
+
+    return list;
 }
 
 export async function getHostels(filters?: {
