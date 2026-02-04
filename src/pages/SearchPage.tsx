@@ -117,31 +117,30 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
           {
             id: "nana-agyoma-manual",
             name: "Nana Agyoma Hostel",
-            address: "Amamoma, UCC", 
-            location: "Amamoma", 
+            address: "Amamoma, UCC",
+            location: "Amamoma",
+            main_image: "https://i.imgur.com/luYRCIq.jpeg",
             images: [
-                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1549187774-b4e9b0445b41?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200&auto=format&fit=crop",
+              "https://i.imgur.com/luYRCIq.jpeg",
+              "https://i.imgur.com/peh4mP5.jpeg",
+              "https://i.imgur.com/CKdT7Di.jpeg",
+              "https://i.imgur.com/Ci2Vn7D.jpeg",
             ],
-            main_image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600&auto=format&fit=crop",
           },
+          // REMOVED Success City Hostel as requested
           {
-            id: "success-city-manual",
-            name: "Success City Hostel",
-            address: "Kwakyerkrom, UCC", 
-            location: "Kwakyerkrom", 
+            id: "adoration-home-plus-manual",
+            name: "Adoration Home Plus Hostel",
+            address: "Ayensu, UCC",
+            location: "Ayensu",
+            main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
             images: [
-                "https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1560067174-8943bd8f2662?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=1200&auto=format&fit=crop",
+              "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+              "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg",
+              "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png",
+              "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png", // Repeated to fill the layout
             ],
-            main_image: "https://images.unsplash.com/photo-1596276020587-8044fe049813?q=80&w=600&auto=format&fit=crop",
-          }
+          },
         ];
 
         // Merge without duplicates
