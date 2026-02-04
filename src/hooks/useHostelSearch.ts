@@ -232,4 +232,4 @@ export function useHostelSearch() {
       intent,
     },
   };
-}
+} 
