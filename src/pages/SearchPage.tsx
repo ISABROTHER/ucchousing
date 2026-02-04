@@ -34,7 +34,7 @@ const TextUtils = {
       .replace(/\s+/g, " ")
       .trim();
   },
-  
+
   tokenize(s: string): string[] {
     const n = this.normalize(s);
     if (!n) return [];
@@ -60,14 +60,14 @@ const TextUtils = {
     const original = String(text || "");
     const token = this.tokenize(query)[0];
     if (!token) return original;
-  
+
     const re = new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     const m = original.match(re);
     if (!m || m.index == null) return original;
-  
+
     const start = m.index;
     const end = start + m[0].length;
-  
+
     return (
       <span>
         {original.slice(0, start)}
@@ -77,7 +77,7 @@ const TextUtils = {
         {original.slice(end)}
       </span>
     );
-  }
+  },
 };
 
 // --- Fuzzy Search Algorithm ---
@@ -89,10 +89,10 @@ const SearchAlgo = {
     const n = t.length;
     if (m === 0) return n;
     if (n === 0) return m;
-  
+
     const dp = new Array(n + 1).fill(0);
     for (let j = 0; j <= n; j++) dp[j] = j;
-  
+
     for (let i = 1; i <= m; i++) {
       let prev = dp[0];
       dp[0] = i;
@@ -110,17 +110,15 @@ const SearchAlgo = {
     if (!queryTokens.length) return 0;
     const hTokens = TextUtils.tokenize(hay);
     if (!hTokens.length) return 0;
-  
+
     let hits = 0;
     for (const q of queryTokens) {
       if (q.length <= 1) continue;
-      // Exact substring match
       const direct = hTokens.some((w) => w.includes(q) || q.includes(w));
       if (direct) {
         hits += 1;
         continue;
       }
-      // Typo tolerance
       if (q.length >= 2 && q.length <= 10) {
         const close = hTokens.some((w) => {
           if (w.length < 2 || w.length > 14) return false;
@@ -132,7 +130,7 @@ const SearchAlgo = {
     }
     const ratio = hits / Math.max(1, queryTokens.length);
     return Math.round(Math.max(0, Math.min(100, ratio * 100)));
-  }
+  },
 };
 
 // --- Intent Parsing (NLP Lite) ---
@@ -151,34 +149,31 @@ const IntentParser = {
   parse(raw: string) {
     const q = TextUtils.normalize(raw);
     const tokens = TextUtils.tokenize(q);
-    
-    const intent = { 
-      queryTokens: tokens, 
-      priceMax: undefined as number | undefined, 
-      priceMin: undefined as number | undefined, 
-      wantsCheap: false, 
+
+    const intent = {
+      queryTokens: tokens,
+      priceMax: undefined as number | undefined,
+      priceMin: undefined as number | undefined,
+      wantsCheap: false,
       nearCampus: false,
       roomTypeHints: [] as string[],
-      amenityHints: [] as string[]
+      amenityHints: [] as string[],
     };
-  
-    // Price
+
     const priceMaxMatch = q.match(/(under|below|max|less than)\s+(\d{2,6})/) || q.match(/<\s*(\d{2,6})/);
     if (priceMaxMatch) intent.priceMax = Number(priceMaxMatch[2] ?? priceMaxMatch[1]);
-  
+
     const priceMinMatch = q.match(/(over|above|min|more than)\s+(\d{2,6})/) || q.match(/>\s*(\d{2,6})/);
     if (priceMinMatch) intent.priceMin = Number(priceMinMatch[2] ?? priceMinMatch[1]);
-  
+
     if (tokens.includes("cheap") || tokens.includes("budget") || tokens.includes("affordable")) {
       intent.wantsCheap = true;
     }
-  
-    // Location
+
     if (q.match(/near campus|close to campus|on campus|ucc|campus/)) {
       intent.nearCampus = true;
     }
-  
-    // Room Type Hints
+
     const roomTypeMap: Array<[string[], string]> = [
       [["self", "con"], "self-contained"],
       [["self-contained"], "self-contained"],
@@ -193,23 +188,21 @@ const IntentParser = {
     ];
     for (const [keys, label] of roomTypeMap) {
       if (keys.every((k) => tokens.includes(k))) {
-         if (!intent.roomTypeHints.includes(label)) intent.roomTypeHints.push(label);
+        if (!intent.roomTypeHints.includes(label)) intent.roomTypeHints.push(label);
       }
     }
-  
-    // Amenities
+
     for (const k of Object.keys(this.AMENITY_SYNONYMS)) {
       const syns = this.AMENITY_SYNONYMS[k] ?? [];
       if (syns.some((s) => q.includes(TextUtils.normalize(s)))) intent.amenityHints.push(k);
     }
     intent.amenityHints = Array.from(new Set(intent.amenityHints));
-  
+
     return intent;
-  }
+  },
 };
 
 // --- Indexer ---
-// Transforming Raw Hostel Data into efficient Searchable Objects
 type IndexedHostel = {
   id: string;
   hostel: any;
@@ -231,7 +224,6 @@ type IndexedHostel = {
 };
 
 const Indexer = {
-  // Stable ID Generation
   stableHash(input: string): string {
     let h = 5381;
     const s = input || "";
@@ -263,7 +255,7 @@ const Indexer = {
       [hostel.price_per_year, "year"],
       [hostel.price_per_day, "day"],
     ];
-  
+
     for (const [v, unit] of direct) {
       if (typeof v === "number" && Number.isFinite(v)) return { price: v, unit };
       if (typeof v === "string") {
@@ -271,7 +263,7 @@ const Indexer = {
         if (m) return { price: Number(m[1]), unit };
       }
     }
-    // Generic fallback
+
     const candidates = [hostel.price, hostel.price_from, hostel.min_price];
     for (const c of candidates) {
       if (typeof c === "number" && Number.isFinite(c)) return { price: c, unit: "unknown" };
@@ -296,21 +288,21 @@ const Indexer = {
       const name = TextUtils.getStringField(h, "name") || "Hostel";
       const location = TextUtils.getStringField(h, "location") || "";
       const address = TextUtils.getStringField(h, "address") || "";
-  
+
       const featuresRaw = h.features ?? h.amenities ?? h.facilities ?? h.tags ?? h.description ?? h.category ?? "";
       const roomRaw = h.room_type ?? h.roomType ?? h.type ?? h.category ?? "";
       const amenityRaw = h.amenities ?? h.features ?? h.facilities ?? h.tags ?? "";
-  
+
       const nameN = TextUtils.normalize(name);
       const locationN = TextUtils.normalize(location);
       const addressN = TextUtils.normalize(address);
       const featuresN = TextUtils.normalize(TextUtils.toText(featuresRaw));
       const roomTypeN = TextUtils.normalize(TextUtils.toText(roomRaw));
       const amenityN = TextUtils.normalize(TextUtils.toText(amenityRaw));
-  
+
       const imgs = this.getImageUrls(h);
       const { price, unit } = this.extractPriceWithUnit(h);
-      
+
       return {
         id,
         hostel: h,
@@ -331,8 +323,95 @@ const Indexer = {
         nearCampus: this.isNearCampus(locationN, addressN, featuresN),
       };
     });
-  }
+  },
 };
+
+// ----------------------------------------------------------------------
+// Availability helpers (MODERN + TRUSTWORTHY)
+// ----------------------------------------------------------------------
+type AvailabilityStatus = "unknown" | "full" | "low" | "medium" | "high";
+
+function getAvailabilityNumber(hostel: any): number | null {
+  // Accept common keys; DO NOT default to 0 (unknown must stay unknown)
+  const raw =
+    hostel?.beds_available ??
+    hostel?.rooms_available ??
+    hostel?.available_rooms ??
+    hostel?.availability_count ??
+    hostel?.roomsLeft ??
+    hostel?.rooms_left;
+
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string") {
+    const m = raw.replace(/,/g, "").match(/(\d+)/);
+    if (m) {
+      const n = Number(m[1]);
+      return Number.isFinite(n) ? n : null;
+    }
+  }
+  return null;
+}
+
+function getAvailabilityStatus(n: number | null): AvailabilityStatus {
+  if (n == null) return "unknown";
+  if (n <= 0) return "full";
+  if (n <= 2) return "low";
+  if (n <= 5) return "medium";
+  return "high";
+}
+
+function getAvailabilityLabel(n: number | null): string {
+  if (n == null) return "Check";
+  if (n <= 0) return "Full";
+  if (n <= 2) return "1–2";
+  if (n <= 5) return "3–5";
+  return "6+";
+}
+
+function getAvailabilitySubLabel(n: number | null): string {
+  if (n == null) return "Availability";
+  if (n <= 0) return "No rooms";
+  return "Rooms Left";
+}
+
+function getAvailabilityUpdatedAt(hostel: any): Date | null {
+  const raw =
+    hostel?.availability_updated_at ??
+    hostel?.availabilityUpdatedAt ??
+    hostel?.updated_at ??
+    hostel?.updatedAt;
+
+  if (!raw) return null;
+
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function timeAgo(d: Date): string {
+  const ms = Date.now() - d.getTime();
+  const sec = Math.floor(ms / 1000);
+  if (sec < 45) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 48) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 14) return `${day}d ago`;
+  const wk = Math.floor(day / 7);
+  return `${wk}w ago`;
+}
+
+function isAvailabilityVerified(hostel: any): boolean {
+  // Flexible: supports different schemas
+  const v = hostel?.availability_verified ?? hostel?.availabilityVerified ?? hostel?.verified;
+  if (typeof v === "boolean") return v;
+
+  const source = String(hostel?.availability_source ?? hostel?.availabilitySource ?? hostel?.source ?? "").toLowerCase();
+  // Treat manager/admin sources as verified
+  if (source.includes("manager") || source.includes("admin") || source.includes("owner")) return true;
+
+  return false;
+}
 
 // ----------------------------------------------------------------------
 // LAYER 2: UI COMPONENTS (Pure Presentation)
@@ -354,75 +433,169 @@ function Pill({ label, onClear }: { label: string; onClear: () => void }) {
   );
 }
 
-function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen: () => void; query: string; }) {
+function SearchMosaicCard({
+  item,
+  onOpen,
+  query,
+}: {
+  item: IndexedHostel;
+  onOpen: () => void;
+  query: string;
+}) {
   const images = Indexer.getImageUrls(item.hostel);
   const safeImages = [...images];
   while (safeImages.length < 5 && safeImages.length > 0) safeImages.push(safeImages[0]);
   const [a, b, c, d, e] = safeImages;
 
-  const unitLabel = item.priceUnit === "month" ? "/mo" : item.priceUnit === "semester" ? "/sem" : item.priceUnit === "year" ? "/yr" : item.priceUnit === "day" ? "/day" : "";
+  const unitLabel =
+    item.priceUnit === "month"
+      ? "/mo"
+      : item.priceUnit === "semester"
+        ? "/sem"
+        : item.priceUnit === "year"
+          ? "/yr"
+          : item.priceUnit === "day"
+            ? "/day"
+            : "";
   const showPrice = item.price != null;
-  
+
   const chips: string[] = [];
   if (showPrice) chips.push(`From ${item.price!.toLocaleString()}${unitLabel}`);
-  
+
   if (item.roomTypeN.includes("self-contained") || item.roomTypeN.includes("self con")) chips.push("Self-contained");
   else if (item.roomTypeN.includes("shared") || item.roomTypeN.includes("2 in 1")) chips.push("Shared");
   else if (item.roomTypeN.includes("single")) chips.push("Single room");
-  
+
   if (item.nearCampus) chips.push("Near campus");
 
-  // Check amenities
-  const hasWifi = IntentParser.AMENITY_SYNONYMS['wifi'].some(s => item.amenityN.includes(TextUtils.normalize(s)));
+  const hasWifi = IntentParser.AMENITY_SYNONYMS["wifi"].some((s) => item.amenityN.includes(TextUtils.normalize(s)));
   if (hasWifi) chips.push("Wi-Fi");
-  
+
   const displayChips = chips.slice(0, 4);
 
-  // Availability Logic
-  const beds = item.hostel.beds_available ?? 0;
-  const isAvailable = beds > 0;
+  // ✅ MODERN AVAILABILITY: range + unknown + verified + last-updated
+  const availN = getAvailabilityNumber(item.hostel);
+  const status = getAvailabilityStatus(availN);
+  const label = getAvailabilityLabel(availN);
+  const subLabel = getAvailabilitySubLabel(availN);
+  const updatedAt = getAvailabilityUpdatedAt(item.hostel);
+  const verified = isAvailabilityVerified(item.hostel);
 
-  // COLOR THEME SYSTEM (Matches Availability Box)
-  const theme = isAvailable 
-    ? {
-        nameHover: "group-hover/card:text-emerald-700",
-        icon: "text-emerald-500",
-        chip: "bg-emerald-50 text-emerald-800 border-emerald-100",
-        boxBg: "bg-emerald-500",
-        boxShadow: "shadow-emerald-200",
-        boxText: "text-white"
-      }
-    : {
-        nameHover: "group-hover/card:text-rose-700",
-        icon: "text-rose-500",
-        chip: "bg-rose-50 text-rose-800 border-rose-100",
-        boxBg: "bg-rose-500", // Bright red for full to match "BRIGHT COLOURS" request
-        boxShadow: "shadow-rose-200",
-        boxText: "text-white"
-      };
+  // Theme based on status (keeps your “bright” idea)
+  const theme =
+    status === "full"
+      ? {
+          nameHover: "group-hover/card:text-rose-700",
+          icon: "text-rose-500",
+          chip: "bg-rose-50 text-rose-800 border-rose-100",
+          boxBg: "bg-rose-500",
+          boxShadow: "shadow-rose-200",
+          boxText: "text-white",
+        }
+      : status === "unknown"
+        ? {
+            nameHover: "group-hover/card:text-slate-900",
+            icon: "text-slate-500",
+            chip: "bg-slate-50 text-slate-800 border-slate-200",
+            boxBg: "bg-slate-900",
+            boxShadow: "shadow-slate-200",
+            boxText: "text-white",
+          }
+        : status === "low"
+          ? {
+              nameHover: "group-hover/card:text-amber-700",
+              icon: "text-amber-500",
+              chip: "bg-amber-50 text-amber-800 border-amber-100",
+              boxBg: "bg-amber-500",
+              boxShadow: "shadow-amber-200",
+              boxText: "text-white",
+            }
+          : {
+              // medium/high → green
+              nameHover: "group-hover/card:text-emerald-700",
+              icon: "text-emerald-500",
+              chip: "bg-emerald-50 text-emerald-800 border-emerald-100",
+              boxBg: "bg-emerald-500",
+              boxShadow: "shadow-emerald-200",
+              boxText: "text-white",
+            };
 
   return (
     <div className="group/card flex flex-col gap-4 rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-lg shadow-slate-100 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10">
-      
       {/* IMAGES */}
-      <button onClick={onOpen} className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] transition-transform" type="button">
+      <button
+        onClick={onOpen}
+        className="relative block w-full overflow-hidden rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] transition-transform"
+        type="button"
+      >
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-64 sm:h-80 md:h-96">
           <div className="col-span-2 row-span-2 relative overflow-hidden bg-slate-200">
-            {a ? <img src={a} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Main" /> : <div className="h-full w-full flex items-center justify-center"><ImageIcon className="h-10 w-10 text-slate-400" /></div>}
+            {a ? (
+              <img
+                src={a}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                alt="Main"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-10 w-10 text-slate-400" />
+              </div>
+            )}
           </div>
           <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-            {b ? <img src={b} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 1" /> : <div className="h-full w-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-slate-400" /></div>}
+            {b ? (
+              <img
+                src={b}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                alt="Detail 1"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
           </div>
           <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-             {c ? <img src={c} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 2" /> : <div className="h-full w-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-slate-400" /></div>}
+            {c ? (
+              <img
+                src={c}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                alt="Detail 2"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
           </div>
           <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-            {d ? <img src={d} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 3" /> : <div className="h-full w-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-slate-400" /></div>}
+            {d ? (
+              <img
+                src={d}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                alt="Detail 3"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
           </div>
-           <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
-             {e ? <img src={e} className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105" alt="Detail 4" /> : <div className="h-full w-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-slate-400" /></div>}
-           </div>
+          <div className="col-span-1 row-span-1 relative overflow-hidden bg-slate-200">
+            {e ? (
+              <img
+                src={e}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                alt="Detail 4"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
+          </div>
         </div>
+
         <div className="absolute bottom-4 right-4 z-10">
           <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
             <ImageIcon className="h-4 w-4" />
@@ -434,17 +607,15 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
       {/* DETAILS SPLIT LAYOUT */}
       <div className="px-2 pb-2">
         <div className="flex items-stretch justify-between gap-4">
-          
-          {/* LEFT: Name, Location, Chips (THEMED) */}
+          {/* LEFT: Name, Location, Chips */}
           <div className="flex-1 min-w-0 flex flex-col justify-between">
             <div>
               <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors mb-1`}>
                 {TextUtils.highlight(item.name, query)}
               </h3>
-              
+
               {(item.location || item.address) && (
                 <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mb-3">
-                  {/* Colored Icon */}
                   <MapPin className={`h-4 w-4 ${theme.icon} shrink-0`} />
                   <span className="truncate">{TextUtils.highlight(item.location || item.address, query)}</span>
                 </div>
@@ -454,8 +625,10 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
             {displayChips.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-auto">
                 {displayChips.map((c) => (
-                  // Colored Chips
-                  <span key={c} className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${theme.chip}`}>
+                  <span
+                    key={c}
+                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${theme.chip}`}
+                  >
                     {c}
                   </span>
                 ))}
@@ -463,28 +636,72 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
             )}
           </div>
 
-          {/* RIGHT: Availability Box (Bold & Animated) */}
+          {/* RIGHT: Availability Box (Range + Trust) */}
           <div className="shrink-0 flex flex-col justify-end">
-            {isAvailable ? (
-              <div className={`group/box relative flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} transition-all duration-500 hover:scale-105 hover:-translate-y-1 overflow-hidden min-w-[90px] text-center`}>
-                 {/* Animated Glint */}
-                 <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                 
-                 <div className="relative z-10">
-                    <div className="text-[10px] font-black uppercase tracking-widest opacity-90 mb-0.5">Hurry</div>
-                    <div className="text-3xl font-black leading-none tracking-tighter animate-pulse">{beds}</div>
-                    <div className="text-[10px] font-bold opacity-90 leading-tight mt-0.5">Rooms<br/>Left</div>
-                 </div>
+            {status === "full" ? (
+              <div className={`flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} min-w-[98px] text-center`}>
+                <XCircle className="h-8 w-8 mb-1 opacity-90" />
+                <div className="text-xs font-black uppercase tracking-wider">Full</div>
+                {updatedAt ? (
+                  <div className="mt-1 text-[10px] font-bold opacity-90">Updated {timeAgo(updatedAt)}</div>
+                ) : null}
               </div>
             ) : (
-              // BRIGHT RED FOR FULL (as requested)
-              <div className={`flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} min-w-[90px] text-center`}>
-                 <XCircle className="h-8 w-8 mb-1 opacity-80"/>
-                 <div className="text-xs font-black uppercase tracking-wider">Full</div>
+              <div
+                className={`group/box relative flex flex-col items-center justify-center rounded-2xl ${theme.boxBg} p-3 ${theme.boxText} shadow-xl ${theme.boxShadow} transition-all duration-500 hover:scale-105 hover:-translate-y-1 overflow-hidden min-w-[98px] text-center`}
+              >
+                {/* Subtle shimmer only when we actually have availability number */}
+                {status !== "unknown" && (
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                )}
+
+                <div className="relative z-10">
+                  <div className="text-[10px] font-black uppercase tracking-widest opacity-90 mb-0.5">
+                    {status === "unknown" ? "Check" : status === "low" ? "Hurry" : "Available"}
+                  </div>
+
+                  <div className={`text-3xl font-black leading-none tracking-tighter ${status === "low" ? "animate-pulse" : ""}`}>
+                    {label}
+                  </div>
+
+                  <div className="text-[10px] font-bold opacity-90 leading-tight mt-0.5">
+                    {subLabel.split(" ").map((w, i) => (
+                      <span key={i}>
+                        {w}
+                        {i === 0 ? <br /> : null}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Trust row */}
+                  <div className="mt-2 flex items-center justify-center gap-1.5">
+                    {verified ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        Verified
+                      </span>
+                    ) : status === "unknown" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Ask
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-wider">
+                        <BedDouble className="h-3.5 w-3.5" />
+                        Live
+                      </span>
+                    )}
+                  </div>
+
+                  {updatedAt ? (
+                    <div className="mt-1 text-[10px] font-bold opacity-90 predicted">
+                      Updated {timeAgo(updatedAt)}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>
@@ -493,25 +710,17 @@ function SearchMosaicCard({ item, onOpen, query }: { item: IndexedHostel; onOpen
 
 // ----------------------------------------------------------------------
 // LAYER 3: VIEW CONTROLLER (React Component)
-// Connects Layer 1 (Logic) with Layer 2 (UI) and Repository
 // ----------------------------------------------------------------------
 
-interface SearchPageProps {
-  onNavigate: (page: PageType, hostelId?: string) => void;
-}
-
 export default function SearchPage({ onNavigate }: SearchPageProps) {
-  // --- Data State ---
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Search State ---
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
 
-  // --- Filter State ---
   const [locationFilter, setLocationFilter] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [sortMode, setSortMode] = useState<"recommended" | "name_az" | "price_low">("recommended");
@@ -521,13 +730,11 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
   const [priceMinStr, setPriceMinStr] = useState("");
   const [priceMaxStr, setPriceMaxStr] = useState("");
 
-  // --- Suggestions State ---
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
 
-  // 1. Debounce Input
   useEffect(() => {
     setIsTyping(true);
     const t = window.setTimeout(() => {
@@ -538,7 +745,6 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     return () => window.clearTimeout(t);
   }, [searchTerm]);
 
-  // 2. Fetch Data (From Repository)
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -554,10 +760,8 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     void load();
   }, []);
 
-  // 3. Build Search Index (Logic Layer)
   const indexed = useMemo(() => Indexer.build(hostels), [hostels]);
 
-  // 4. Calculate Unique Locations
   const uniqueLocations = useMemo(() => {
     const locs = new Set<string>();
     for (const it of indexed) {
@@ -569,21 +773,17 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     return ["All", ...clean];
   }, [indexed]);
 
-  // 5. Parse Intent (Logic Layer)
   const intent = useMemo(() => IntentParser.parse(debouncedSearch), [debouncedSearch]);
-  
-  // 6. Execute Search & Score (Logic Layer)
+
   const filteredItems = useMemo(() => {
     const locFilterNorm = TextUtils.normalize(locationFilter === "All" ? "" : locationFilter);
     const wantNear = distanceFilter === "Near campus";
-    
-    // Explicit Inputs
+
     const pMinInput = (priceMinStr || "").replace(/,/g, "").trim();
     const pMaxInput = (priceMaxStr || "").replace(/,/g, "").trim();
     const priceMin = pMinInput ? Number(pMinInput) : intent.priceMin;
     const priceMax = pMaxInput ? Number(pMaxInput) : intent.priceMax;
 
-    // Room Type Inputs
     let roomTypeNeedles: string[] = [];
     if (roomTypeFilter !== "Any") {
       if (roomTypeFilter === "Self-contained") roomTypeNeedles = ["self-contained", "self con", "selfcontained"];
@@ -595,23 +795,24 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
     const amenityKeys = Array.from(new Set([...selectedAmenities, ...intent.amenityHints]));
     const qTokens = intent.queryTokens;
 
-    const results = indexed.map((it) => {
-        // Filters
-        const matchesLocation = locationFilter === "All" || (!!locFilterNorm && (it.locationN.includes(locFilterNorm) || it.addressN.includes(locFilterNorm)));
+    const results = indexed
+      .map((it) => {
+        const matchesLocation =
+          locationFilter === "All" ||
+          (!!locFilterNorm && (it.locationN.includes(locFilterNorm) || it.addressN.includes(locFilterNorm)));
         const matchesDistance = wantNear ? it.nearCampus : true;
         const matchesRoom = roomTypeNeedles.length ? roomTypeNeedles.some((n) => it.roomTypeN.includes(TextUtils.normalize(n))) : true;
-        
-        // Amenity Check
-        const matchesAmenities = !amenityKeys.length || amenityKeys.every((key) => {
-           const syns = IntentParser.AMENITY_SYNONYMS[key] ?? [key];
-           return syns.some((s) => it.amenityN.includes(TextUtils.normalize(s)));
-        });
 
-        // Price Check
+        const matchesAmenities =
+          !amenityKeys.length ||
+          amenityKeys.every((key) => {
+            const syns = IntentParser.AMENITY_SYNONYMS[key] ?? [key];
+            return syns.some((s) => it.amenityN.includes(TextUtils.normalize(s)));
+          });
+
         const matchesPriceMin = priceMin == null || it.price == null ? true : it.price >= priceMin;
         const matchesPriceMax = priceMax == null || it.price == null ? true : it.price <= priceMax;
 
-        // Fuzzy Scoring
         const sName = SearchAlgo.score(it.nameN, qTokens);
         const sLoc = SearchAlgo.score(it.locationN, qTokens);
         const sAddr = SearchAlgo.score(it.addressN, qTokens);
@@ -620,43 +821,65 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
         const hasQuery = qTokens.length > 0;
         const anyFuzzyHit = sName > 0 || sLoc > 0 || sAddr > 0 || sFeat > 0;
 
-        const passesQueryGate = !hasQuery || anyFuzzyHit || amenityKeys.length > 0 || roomTypeNeedles.length > 0 || priceMin != null || priceMax != null || wantNear;
-        
-        const passesAll = matchesLocation && matchesDistance && matchesRoom && matchesAmenities && matchesPriceMin && matchesPriceMax && passesQueryGate;
+        const passesQueryGate =
+          !hasQuery ||
+          anyFuzzyHit ||
+          amenityKeys.length > 0 ||
+          roomTypeNeedles.length > 0 ||
+          priceMin != null ||
+          priceMax != null ||
+          wantNear;
 
-        let score = (sName * 3) + (sLoc * 2) + (sAddr * 1) + (sFeat * 1) + (it.hasImages * 60) + (it.hasPrice * 40);
-        if (!qTokens.length) score = (it.hasImages * 60) + (it.hasPrice * 40);
+        const passesAll =
+          matchesLocation &&
+          matchesDistance &&
+          matchesRoom &&
+          matchesAmenities &&
+          matchesPriceMin &&
+          matchesPriceMax &&
+          passesQueryGate;
+
+        let score = sName * 3 + sLoc * 2 + sAddr * 1 + sFeat * 1 + it.hasImages * 60 + it.hasPrice * 40;
+        if (!qTokens.length) score = it.hasImages * 60 + it.hasPrice * 40;
         if (intent.nearCampus && it.nearCampus) score += 80;
         if (intent.wantsCheap && it.price != null) score += Math.max(0, 8000 - it.price) / 50;
-        
-        // Boost matches on filters
+
         if (wantNear && it.nearCampus) score += 60;
         if (roomTypeNeedles.length && matchesRoom) score += 40;
         if (amenityKeys.length && matchesAmenities) score += 30;
 
         return { it, score, passesAll };
-    }).filter(x => x.passesAll);
+      })
+      .filter((x) => x.passesAll);
 
-    // Sorting
     results.sort((a, b) => {
-       if (sortMode === "name_az") return a.it.nameN.localeCompare(b.it.nameN);
-       if (sortMode === "price_low") {
-         const ap = a.it.price ?? Infinity;
-         const bp = b.it.price ?? Infinity;
-         if (ap !== bp) return ap - bp;
-       }
-       return b.score - a.score;
+      if (sortMode === "name_az") return a.it.nameN.localeCompare(b.it.nameN);
+      if (sortMode === "price_low") {
+        const ap = a.it.price ?? Infinity;
+        const bp = b.it.price ?? Infinity;
+        if (ap !== bp) return ap - bp;
+      }
+      return b.score - a.score;
     });
 
-    return results.map(x => x.it);
+    return results.map((x) => x.it);
   }, [indexed, intent, locationFilter, roomTypeFilter, distanceFilter, selectedAmenities, priceMinStr, priceMaxStr, sortMode]);
 
-  // 7. Suggestions (Logic)
   const suggestions = useMemo(() => {
     const q = TextUtils.normalize(searchTerm);
-    const templates = ["under 800 near campus", "under 1000", "self con Ayensu", "Amamoma single room", "wifi + security", "near campus", "shared room", "self-contained", "budget"];
+    const templates = [
+      "under 800 near campus",
+      "under 1000",
+      "self con Ayensu",
+      "Amamoma single room",
+      "wifi + security",
+      "near campus",
+      "shared room",
+      "self-contained",
+      "budget",
+    ];
     const locs = uniqueLocations.filter((l) => l !== "All").slice(0, 12);
-    
+
     const merged = Array.from(new Set([...templates, ...locs]));
     if (!q) return merged.slice(0, 10);
     const qTokens = TextUtils.tokenize(q);
@@ -668,132 +891,213 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
       .slice(0, 10);
   }, [searchTerm, uniqueLocations]);
 
-  // --- Handlers ---
-  const applySuggestion = (s: string) => { setSearchTerm(s); setShowSuggestions(false); setActiveSuggestion(0); inputRef.current?.focus(); };
-  const toggleAmenity = (key: string) => { setSelectedAmenities((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key])); setVisibleCount(12); };
-  const clearAll = () => { setSearchTerm(""); setLocationFilter("All"); setSortMode("recommended"); setRoomTypeFilter("Any"); setDistanceFilter("Any"); setSelectedAmenities([]); setPriceMinStr(""); setPriceMaxStr(""); setVisibleCount(12); };
+  const applySuggestion = (s: string) => {
+    setSearchTerm(s);
+    setShowSuggestions(false);
+    setActiveSuggestion(0);
+    inputRef.current?.focus();
+  };
+
+  const toggleAmenity = (key: string) => {
+    setSelectedAmenities((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
+    setVisibleCount(12);
+  };
+
+  const clearAll = () => {
+    setSearchTerm("");
+    setLocationFilter("All");
+    setSortMode("recommended");
+    setRoomTypeFilter("Any");
+    setDistanceFilter("Any");
+    setSelectedAmenities([]);
+    setPriceMinStr("");
+    setPriceMaxStr("");
+    setVisibleCount(12);
+  };
 
   const paged = filteredItems.slice(0, visibleCount);
-  const activePills = [];
+
+  const activePills: Array<{ key: string; label: string; onClear: () => void }> = [];
   if (searchTerm.trim()) activePills.push({ key: "search", label: `Search: ${searchTerm}`, onClear: () => setSearchTerm("") });
   if (locationFilter !== "All") activePills.push({ key: "location", label: `Location: ${locationFilter}`, onClear: () => setLocationFilter("All") });
   if (sortMode !== "recommended") activePills.push({ key: "sort", label: sortMode === "price_low" ? "Sort: Lowest price" : "Sort: Name A–Z", onClear: () => setSortMode("recommended") });
   if (roomTypeFilter !== "Any") activePills.push({ key: "room", label: `Room: ${roomTypeFilter}`, onClear: () => setRoomTypeFilter("Any") });
   if (distanceFilter !== "Any") activePills.push({ key: "distance", label: `Distance: ${distanceFilter}`, onClear: () => setDistanceFilter("Any") });
-  if (selectedAmenities.length) selectedAmenities.forEach(a => activePills.push({ key: `amenity_${a}`, label: `Amenity: ${AMENITY_OPTIONS.find(o=>o.key===a)?.label||a}`, onClear: () => toggleAmenity(a) }));
+  if (selectedAmenities.length) selectedAmenities.forEach((a) => activePills.push({ key: `amenity_${a}`, label: `Amenity: ${AMENITY_OPTIONS.find((o) => o.key === a)?.label || a}`, onClear: () => toggleAmenity(a) }));
   if (priceMinStr.trim()) activePills.push({ key: "pmin", label: `Min: ${priceMinStr}`, onClear: () => setPriceMinStr("") });
   if (priceMaxStr.trim()) activePills.push({ key: "pmax", label: `Max: ${priceMaxStr}`, onClear: () => setPriceMaxStr("") });
-  if (intent.nearCampus && searchTerm.trim()) activePills.push({ key: "intent_near", label: "Intent: Near campus", onClear: () => setSearchTerm(prev => prev.replace(/near campus|close to campus|ucc|campus/gi, "").trim()) });
+  if (intent.nearCampus && searchTerm.trim()) activePills.push({ key: "intent_near", label: "Intent: Near campus", onClear: () => setSearchTerm((prev) => prev.replace(/near campus|close to campus|ucc|campus/gi, "").trim()) });
 
   const filterProps = {
     uniqueLocations,
-    locationFilter, setLocationFilter,
-    sortMode, setSortMode,
-    roomTypeFilter, setRoomTypeFilter,
-    distanceFilter, setDistanceFilter,
-    priceMinStr, setPriceMinStr,
-    priceMaxStr, setPriceMaxStr,
-    selectedAmenities, toggleAmenity,
-    clearAll
+    locationFilter,
+    setLocationFilter,
+    sortMode,
+    setSortMode,
+    roomTypeFilter,
+    setRoomTypeFilter,
+    distanceFilter,
+    setDistanceFilter,
+    priceMinStr,
+    setPriceMinStr,
+    priceMaxStr,
+    setPriceMaxStr,
+    selectedAmenities,
+    toggleAmenity,
+    clearAll,
   };
 
-  // 8. Render
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-24 px-4">
       <div className="mx-auto max-w-5xl">
-         {/* Search Header */}
-         <div className="mb-8 md:mb-10">
-           <div className="md:static sticky top-0 z-30 -mx-4 px-4 pt-4 pb-4 bg-slate-50/90 backdrop-blur border-b border-slate-100 md:border-0">
-             <h1 className="text-3xl font-extrabold text-slate-900 mb-4 md:mb-6">Search Hostels</h1>
-             <div className="flex flex-col md:flex-row gap-4">
-               {/* Input Block */}
-               <div className="relative flex-1">
-                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><Search className="h-5 w-5 text-slate-400" /></div>
-                 <input ref={inputRef} type="text" className="block w-full rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-bold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-shadow" placeholder='Try: "under 800 near campus", "self con Ayensu"' value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setShowSuggestions(true); setActiveSuggestion(0); }} onFocus={() => setShowSuggestions(true)} onKeyDown={(e) => {
+        <div className="mb-8 md:mb-10">
+          <div className="md:static sticky top-0 z-30 -mx-4 px-4 pt-4 pb-4 bg-slate-50/90 backdrop-blur border-b border-slate-100 md:border-0">
+            <h1 className="text-3xl font-extrabold text-slate-900 mb-4 md:mb-6">Search Hostels</h1>
+
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="h-5 w-5 text-slate-400" />
+                </div>
+
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="block w-full rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-bold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-shadow"
+                  placeholder='Try: "under 800 near campus", "self con Ayensu"'
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowSuggestions(true);
+                    setActiveSuggestion(0);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onKeyDown={(e) => {
                     if (!showSuggestions || !suggestions.length) return;
-                    if (e.key === "ArrowDown") { e.preventDefault(); setActiveSuggestion(p => Math.min(p+1, suggestions.length-1)); }
-                    if (e.key === "ArrowUp") { e.preventDefault(); setActiveSuggestion(p => Math.max(p-1, 0)); }
+                    if (e.key === "ArrowDown") { e.preventDefault(); setActiveSuggestion((p) => Math.min(p + 1, suggestions.length - 1)); }
+                    if (e.key === "ArrowUp") { e.preventDefault(); setActiveSuggestion((p) => Math.max(p - 1, 0)); }
                     if (e.key === "Enter") { e.preventDefault(); applySuggestion(suggestions[activeSuggestion]); }
                     if (e.key === "Escape") setShowSuggestions(false);
-                 }}/>
-                 {searchTerm.trim() && <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-slate-100"><X className="h-4 w-4 text-slate-500" /></button>}
-                 
-                 {showSuggestions && suggestions.length > 0 && (
-                   <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl z-40">
-                     {suggestions.map((s, idx) => (
-                       <button key={idx} onClick={() => applySuggestion(s)} className={`w-full text-left px-4 py-3 text-sm font-extrabold ${idx === activeSuggestion ? "bg-emerald-50 text-emerald-800" : "hover:bg-slate-50 text-slate-800"}`}>
-                         {TextUtils.highlight(s, searchTerm)}
-                       </button>
-                     ))}
-                   </div>
-                 )}
-               </div>
-               
-               {/* Mobile Filter Toggle */}
-               <button onClick={() => setShowFilters(!showFilters)} className="md:hidden inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm"><SlidersHorizontal className="h-4 w-4" /> Filters</button>
+                  }}
+                />
 
-               {/* Desktop Controls */}
-               <div className="hidden md:flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                 <div className="relative min-w-[200px]">
-                    <MapPin className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-slate-400" />
-                    <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="block w-full appearance-none rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-8 text-sm font-bold text-slate-700 focus:border-emerald-500 focus:outline-none shadow-sm">
-                      {uniqueLocations.map((loc, i) => <option key={i} value={loc}>{loc === "All" ? "Any Location" : loc}</option>)}
-                    </select>
-                 </div>
-                 <div className="relative min-w-[200px]">
-                    <ArrowUpDown className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-slate-400" />
-                    <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="block w-full appearance-none rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-8 text-sm font-bold text-slate-700 focus:border-emerald-500 focus:outline-none shadow-sm">
-                      <option value="recommended">Recommended</option>
-                      <option value="price_low">Lowest price</option>
-                      <option value="name_az">Name A–Z</option>
-                    </select>
-                 </div>
-               </div>
-             </div>
-             
-             {/* Pills & Counts */}
-             <div className="mt-4 flex flex-wrap items-center gap-3 justify-between">
-                <div className="text-sm font-bold text-slate-700">{loading ? "Loading..." : `${filteredItems.length} hostels found`}</div>
-                {activePills.length > 0 && <button onClick={clearAll} className="text-sm font-extrabold text-slate-900 hover:text-emerald-700">Clear all</button>}
-             </div>
-             
-             {activePills.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                   {activePills.map(p => <Pill key={p.key} label={p.label} onClear={p.onClear}/>)}
+                {searchTerm.trim() && (
+                  <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-slate-100" type="button">
+                    <X className="h-4 w-4 text-slate-500" />
+                  </button>
+                )}
+
+                {showSuggestions && suggestions.length > 0 && (
+                  <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl z-40">
+                    {suggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => applySuggestion(s)}
+                        className={`w-full text-left px-4 py-3 text-sm font-extrabold ${idx === activeSuggestion ? "bg-emerald-50 text-emerald-800" : "hover:bg-slate-50 text-slate-800"}`}
+                        type="button"
+                        onMouseEnter={() => setActiveSuggestion(idx)}
+                      >
+                        {TextUtils.highlight(s, searchTerm)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="md:hidden inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm"
+                type="button"
+              >
+                <SlidersHorizontal className="h-4 w-4" /> Filters
+              </button>
+
+              <div className="hidden md:flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div className="relative min-w-[200px]">
+                  <MapPin className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-slate-400" />
+                  <select
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    className="block w-full appearance-none rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-8 text-sm font-bold text-slate-700 focus:border-emerald-500 focus:outline-none shadow-sm"
+                  >
+                    {uniqueLocations.map((loc, i) => (
+                      <option key={i} value={loc}>
+                        {loc === "All" ? "Any Location" : loc}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-             )}
-           </div>
-           
-           {/* EXTRACTED: Mobile Filter Drawer */}
-           <MobileFilterDrawer {...filterProps} showFilters={showFilters} setShowFilters={setShowFilters} />
-           
-           {/* EXTRACTED: Desktop Quick Filters */}
-           <DesktopFilterBar {...filterProps} />
-         </div>
 
-         {/* Results Grid */}
-         <div className={`transition-opacity duration-300 ${loading||isTyping ? "opacity-60" : "opacity-100"}`}>
-            {loading ? (
-               <div className="grid grid-cols-1 gap-8 animate-pulse">
-                  {[1,2].map(i => <div key={i} className="h-80 bg-slate-200 rounded-[2rem]"/>)}
-               </div>
-            ) : filteredItems.length > 0 ? (
-               <div className="grid grid-cols-1 gap-8">
-                  {paged.map(it => <SearchMosaicCard key={it.id} item={it} query={debouncedSearch} onOpen={()=>onNavigate("detail", it.id)}/>)}
-                  {filteredItems.length > visibleCount && (
-                    <div className="flex justify-center mt-8">
-                      <button onClick={()=>setVisibleCount(p=>p+12)} className="rounded-xl bg-slate-900 px-6 py-3 text-white font-bold shadow-lg">Load more</button>
-                    </div>
-                  )}
-               </div>
-            ) : (
-               <div className="text-center py-20">
-                  <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4"><SearchX className="h-8 w-8 text-slate-400"/></div>
-                  <h3 className="text-xl font-extrabold text-slate-900">No matches found</h3>
-                  <button onClick={clearAll} className="mt-6 rounded-xl bg-slate-900 px-6 py-2.5 text-white font-bold">Clear filters</button>
-               </div>
+                <div className="relative min-w-[200px]">
+                  <ArrowUpDown className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-slate-400" />
+                  <select
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value as any)}
+                    className="block w-full appearance-none rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-8 text-sm font-bold text-slate-700 focus:border-emerald-500 focus:outline-none shadow-sm"
+                  >
+                    <option value="recommended">Recommended</option>
+                    <option value="price_low">Lowest price</option>
+                    <option value="name_az">Name A–Z</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 justify-between">
+              <div className="text-sm font-bold text-slate-700">{loading ? "Loading..." : `${filteredItems.length} hostels found`}</div>
+              {activePills.length > 0 && (
+                <button onClick={clearAll} className="text-sm font-extrabold text-slate-900 hover:text-emerald-700" type="button">
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {activePills.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activePills.map((p) => (
+                  <Pill key={p.key} label={p.label} onClear={p.onClear} />
+                ))}
+              </div>
             )}
-         </div>
+          </div>
+
+          <MobileFilterDrawer {...filterProps} showFilters={showFilters} setShowFilters={setShowFilters} />
+          <DesktopFilterBar {...filterProps} />
+        </div>
+
+        <div className={`transition-opacity duration-300 ${loading || isTyping ? "opacity-60" : "opacity-100"}`}>
+          {loading ? (
+            <div className="grid grid-cols-1 gap-8 animate-pulse">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-80 bg-slate-200 rounded-[2rem]" />
+              ))}
+            </div>
+          ) : filteredItems.length > 0 ? (
+            <div className="grid grid-cols-1 gap-8">
+              {paged.map((it) => (
+                <SearchMosaicCard key={it.id} item={it} query={debouncedSearch} onOpen={() => onNavigate("detail", it.id)} />
+              ))}
+
+              {filteredItems.length > visibleCount && (
+                <div className="flex justify-center mt-8">
+                  <button onClick={() => setVisibleCount((p) => p + 12)} className="rounded-xl bg-slate-900 px-6 py-3 text-white font-bold shadow-lg" type="button">
+                    Load more
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
+                <SearchX className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900">No matches found</h3>
+              <button onClick={clearAll} className="mt-6 rounded-xl bg-slate-900 px-6 py-2.5 text-white font-bold" type="button">
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
