@@ -201,7 +201,16 @@ export const Indexer = {
 
   getImageUrls(hostel: any): string[] {
     const arrays = [hostel.images, hostel.image_urls, hostel.photos];
-    for (const v of arrays) if (Array.isArray(v) && v.length) return v;
+    for (const v of arrays) {
+      if (Array.isArray(v) && v.length) {
+        // Handle array of objects with image_url property
+        if (typeof v[0] === 'object' && v[0]?.image_url) {
+          return v.map((img: any) => img.image_url);
+        }
+        // Handle array of strings
+        return v;
+      }
+    }
     const singles = [hostel.main_image, hostel.cover_image, hostel.image];
     const found = singles.find((x) => typeof x === "string" && x);
     return found ? [found] : [];

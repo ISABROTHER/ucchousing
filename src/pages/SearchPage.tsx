@@ -242,7 +242,16 @@ const Indexer = {
 
   getImageUrls(hostel: any): string[] {
     const arrays = [hostel.images, hostel.image_urls, hostel.photos];
-    for (const v of arrays) if (Array.isArray(v) && v.length) return v;
+    for (const v of arrays) {
+      if (Array.isArray(v) && v.length) {
+        // Handle array of objects with image_url property
+        if (typeof v[0] === 'object' && v[0]?.image_url) {
+          return v.map((img: any) => img.image_url);
+        }
+        // Handle array of strings
+        return v;
+      }
+    }
     const singles = [hostel.main_image, hostel.cover_image, hostel.image];
     const found = singles.find((x) => typeof x === "string" && x);
     return found ? [found] : [];
@@ -750,6 +759,55 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
       setLoading(true);
       try {
         const list = await getAllHostelsRepository();
+
+        // Manual data injection (same as HomeFeatured)
+        const manualHostels = [
+          {
+            id: "nana-agyoma-manual",
+            name: "Nana Agyoma Hostel",
+            address: "Amamoma, UCC",
+            location: "Amamoma",
+            description: "Modern student accommodation in Amamoma, close to UCC campus.",
+            price_per_night: 800,
+            room_type: "self-contained",
+            beds_available: 12,
+            verified: true,
+            rating: 4.5,
+            review_count: 23,
+            main_image: "https://i.imgur.com/luYRCIq.jpeg",
+            images: [
+              { image_url: "https://i.imgur.com/luYRCIq.jpeg" },
+              { image_url: "https://i.imgur.com/peh4mP5.jpeg" },
+              { image_url: "https://i.imgur.com/CKdT7Di.jpeg" },
+              { image_url: "https://i.imgur.com/Ci2Vn7D.jpeg" },
+            ],
+          },
+          {
+            id: "adoration-home-plus-manual",
+            name: "Adoration Home Plus Hostel",
+            address: "Ayensu, UCC",
+            location: "Ayensu",
+            description: "Quality student hostel in Ayensu area.",
+            price_per_night: 750,
+            room_type: "shared",
+            beds_available: 8,
+            verified: true,
+            rating: 4.3,
+            review_count: 18,
+            main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
+            images: [
+              { image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png" },
+              { image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration1-300x300.jpg" },
+              { image_url: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1-300x300.png" },
+            ],
+          },
+        ];
+
+        const existing = new Set(list.map((h: any) => h.name?.toLowerCase()));
+        manualHostels.forEach((m) => {
+          if (!existing.has(m.name.toLowerCase())) list.push(m);
+        });
+
         setHostels(list);
       } catch (err) {
         console.error(err);
