@@ -17,8 +17,8 @@ export default function HostelDetailPage({
   userProfile,
   onNavigate,
 }: HostelDetailPageProps) {
-  const [hostel, setHostel] = useState(null);
-  const [reviews, setReviews] = useState([]);
+  const [hostel, setHostel] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
 
@@ -31,14 +31,20 @@ export default function HostelDetailPage({
     try {
       const data = await getHostelById(hostelId);
       setHostel(data);
-      const reviewsData = await getHostelReviews(hostelId);
-      setReviews(reviewsData);
+      // Only fetch reviews if we actually found a hostel
+      if (data) {
+        const reviewsData = await getHostelReviews(hostelId);
+        setReviews(reviewsData);
+      }
+    } catch (err) {
+      console.error("Error loading hostel:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !hostel) {
+  // 1. Loading State
+  if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -49,6 +55,26 @@ export default function HostelDetailPage({
     );
   }
 
+  // 2. Not Found State (Fixed the infinite load issue)
+  if (!hostel) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Hostel Not Found</h2>
+          <p className="text-gray-600 mb-6">The hostel you are looking for might have been removed or does not exist.</p>
+          <button
+            onClick={() => onNavigate('search')}
+            className="bg-[#DC143C] text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+          >
+            Back to Search
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Success State
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -81,7 +107,7 @@ export default function HostelDetailPage({
 
             {hostel.images && hostel.images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {hostel.images.map((image, idx) => (
+                {hostel.images.map((image: any, idx: number) => (
                   <button
                     key={image.id}
                     onClick={() => setImageIndex(idx)}
@@ -103,9 +129,9 @@ export default function HostelDetailPage({
           <div className="bg-gray-50 rounded-lg p-6 h-fit sticky top-24">
             <div className="mb-6">
               <div className="text-4xl font-bold text-[#DC143C] mb-2">
-                ${hostel.price_per_night}
+                ₵{hostel.price_per_night} 
               </div>
-              <p className="text-gray-600">per night</p>
+              <p className="text-gray-600">per semester (approx)</p>
             </div>
 
             {user && userProfile?.user_type === 'student' ? (
@@ -148,10 +174,10 @@ export default function HostelDetailPage({
               <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
                 <Star className="w-5 h-5 fill-[#DC143C] text-[#DC143C]" />
                 <span className="font-semibold text-black">
-                  {hostel.rating.toFixed(1)}
+                  {hostel.rating?.toFixed(1) || "N/A"}
                 </span>
                 <span className="text-sm text-gray-600">
-                  ({hostel.review_count} reviews)
+                  ({hostel.review_count || 0} reviews)
                 </span>
               </div>
             </div>
@@ -171,7 +197,7 @@ export default function HostelDetailPage({
               <div className="mb-12">
                 <h2 className="text-2xl font-bold text-black mb-4">Amenities</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {hostel.amenities.map((amenity) => (
+                  {hostel.amenities.map((amenity: any) => (
                     <div
                       key={amenity.id}
                       className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
@@ -196,7 +222,7 @@ export default function HostelDetailPage({
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <p className="font-semibold text-black">
-                            {review.user_profiles?.full_name}
+                            {review.user_profiles?.full_name || 'Anonymous'}
                           </p>
                           <p className="text-sm text-gray-500">
                             {new Date(review.created_at).toLocaleDateString()}
