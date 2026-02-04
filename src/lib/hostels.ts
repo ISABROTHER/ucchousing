@@ -24,13 +24,13 @@ export interface HostelWithDetails extends Hostel {
 }
 
 // --- Repository: Manual Data Source ---
-// Encapsulated here so the UI doesn't know it exists.
 const MANUAL_HOSTELS_DATA = [
   {
     id: "nana-agyoma-manual",
     name: "Nana Agyoma Hostel",
     address: "Amamoma, UCC",
     location: "Amamoma",
+    beds_available: 14, // Added availability
     main_image: "https://i.imgur.com/luYRCIq.jpeg",
     images: [
       "https://i.imgur.com/luYRCIq.jpeg",
@@ -38,13 +38,13 @@ const MANUAL_HOSTELS_DATA = [
       "https://i.imgur.com/CKdT7Di.jpeg",
       "https://i.imgur.com/Ci2Vn7D.jpeg",
     ],
-    // Optional: add prices or other fields to match schema if needed
   },
   {
     id: "adoration-home-plus-manual",
     name: "Adoration Home Plus Hostel",
     address: "Ayensu, UCC",
     location: "Ayensu",
+    beds_available: 5, // Added availability
     main_image: "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
     images: [
       "https://getrooms.co/wp-content/uploads/2022/10/adoration-main1.png",
@@ -94,7 +94,6 @@ export async function getAllHostelsRepository() {
 
     if (error) {
         console.error("Repository fetch error:", error);
-        // Fallback to empty array or throw based on strategy
     }
     
     const list = Array.isArray(data) ? [...data] : [];
