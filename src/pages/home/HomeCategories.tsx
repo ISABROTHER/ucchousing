@@ -43,32 +43,22 @@ function getStringField(obj: unknown, key: string): string | undefined {
 }
 
 function inferHousingKey(hostel: any): HousingKey | undefined {
-  const candidates = [
-    getStringField(hostel, "housingType"),
-    getStringField(hostel, "housing_type"),
-    getStringField(hostel, "category"),
-    getStringField(hostel, "type"),
-    getStringField(hostel, "site"),
-    getStringField(hostel, "campusSite"),
-    getStringField(hostel, "campus_site"),
-    getStringField(hostel, "locationCategory"),
-    getStringField(hostel, "location_category"),
-  ].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+  const ht = getStringField(hostel, "housing_type");
+  if (ht) {
+    const map: Record<string, HousingKey> = {
+      new_site: "New Site",
+      old_site: "Old Site",
+      outside_campus: "Outside Campus",
+      traditional_halls: "Traditional Halls",
+    };
+    if (map[ht]) return map[ht];
+  }
 
-  const joined = candidates.join(" ").toLowerCase();
-
-  if (joined.includes("new site")) return "New Site";
-  if (joined.includes("old site")) return "Old Site";
-  if (joined.includes("traditional")) return "Traditional Halls";
-  if (
-    joined.includes("outside") ||
-    joined.includes("off campus") ||
-    joined.includes("off-campus") ||
-    joined.includes("private")
-  )
-    return "Outside Campus";
-
-  return undefined;
+  const location = (getStringField(hostel, "location") || "").toLowerCase();
+  if (location.includes("new site")) return "New Site";
+  if (location.includes("old site")) return "Old Site";
+  if (location.includes("main campus") || location.includes("traditional")) return "Traditional Halls";
+  return "Outside Campus";
 }
 
 function formatCount(count: number): string {

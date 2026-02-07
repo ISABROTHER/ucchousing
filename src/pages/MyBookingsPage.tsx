@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, DollarSign, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getStudentBookings, cancelBooking } from '../lib/bookings';
 import { PageType } from '../App';
@@ -121,14 +121,11 @@ export default function MyBookingsPage({ onNavigate }: MyBookingsPageProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Total</p>
-                      <p className="font-semibold text-[#DC143C]">
-                        ${booking.total_price}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total</p>
+                    <p className="font-semibold text-[#DC143C]">
+                      GHS {booking.total_price}
+                    </p>
                   </div>
                 </div>
 

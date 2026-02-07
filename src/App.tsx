@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import Navigation from './components/Navigation';
-import MobileScaler from './components/MobileScaler'; // Import the scaler
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import HostelDetailPage from './pages/HostelDetailPage';
@@ -9,8 +8,9 @@ import AuthPage from './pages/AuthPage';
 import BookingPage from './pages/BookingPage';
 import DashboardPage from './pages/DashboardPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import RoommatePage from './pages/RoommatePage';
 
-export type PageType = 'home' | 'search' | 'detail' | 'auth' | 'booking' | 'dashboard' | 'my-bookings';
+export type PageType = 'home' | 'search' | 'detail' | 'auth' | 'booking' | 'dashboard' | 'my-bookings' | 'roommates';
 
 interface AppState {
   currentPage: PageType;
@@ -34,7 +34,7 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setState(prev => ({ ...prev, user: session.user }));
-        fetchUserProfile(session.user.id);
+        (async () => { await fetchUserProfile(session.user.id); })();
       } else {
         setState(prev => ({ ...prev, user: null, userProfile: null }));
       }
@@ -51,27 +51,9 @@ function App() {
       if (user) {
         setState(prev => ({ ...prev, user }));
         await fetchUserProfile(user.id);
-      } else {
-        await autoSignIn();
       }
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function autoSignIn() {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'demo@hostelbook.com',
-        password: 'DemoPassword123!',
-      });
-
-      if (!error && data.user) {
-        setState(prev => ({ ...prev, user: data.user }));
-        await fetchUserProfile(data.user.id);
-      }
-    } catch {
-      // Silent fail
     }
   }
 
@@ -109,9 +91,7 @@ function App() {
   }
 
   return (
-    // We apply the MobileScaler here to wrap the entire visible application
-    <MobileScaler>
-      <div className="min-h-screen w-full bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50">
         <Navigation
           user={state.user}
           userProfile={state.userProfile}
@@ -154,9 +134,15 @@ function App() {
           {state.currentPage === 'my-bookings' && state.user && (
             <MyBookingsPage onNavigate={handleNavigate} />
           )}
+          {state.currentPage === 'roommates' && (
+            <RoommatePage
+              user={state.user}
+              userProfile={state.userProfile}
+              onNavigate={handleNavigate}
+            />
+          )}
         </main>
       </div>
-    </MobileScaler>
   );
 }
 

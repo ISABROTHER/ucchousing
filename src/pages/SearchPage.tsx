@@ -719,6 +719,10 @@ function SearchMosaicCard({
 // LAYER 3: VIEW CONTROLLER (React Component)
 // ----------------------------------------------------------------------
 
+interface SearchPageProps {
+  onNavigate: (page: PageType, hostelId?: string) => void;
+}
+
 export default function SearchPage({ onNavigate }: SearchPageProps) {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);

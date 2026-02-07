@@ -231,14 +231,14 @@ export default function BookingPage({
 
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-700">
-                  <span>${hostel.price_per_night} × {calculateNights()} nights</span>
-                  <span className="font-semibold">${calculateTotal()}</span>
+                  <span>GHS {hostel.price_per_night} x {calculateNights()} nights</span>
+                  <span className="font-semibold">GHS {calculateTotal()}</span>
                 </div>
 
                 <div className="pt-3 border-t border-gray-200 flex justify-between">
                   <span className="font-semibold text-black">Total</span>
                   <span className="text-2xl font-bold text-[#DC143C]">
-                    ${calculateTotal()}
+                    GHS {calculateTotal()}
                   </span>
                 </div>
               </div>

@@ -1,27 +1,27 @@
-// src/components/Navigation.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users } from "lucide-react";
 import { PageType } from "../App";
+import { signOut } from "../lib/auth";
 
 interface NavigationProps {
   currentPage: PageType;
   onNavigate: (page: PageType) => void;
-  userType?: "student" | "owner";
-  userName?: string;
-  isLoggedIn: boolean;
-  onLogout: () => void;
+  user: any;
+  userProfile: any;
 }
 
 export default function Navigation({
   currentPage,
   onNavigate,
-  userType,
-  userName,
-  isLoggedIn,
-  onLogout,
+  user,
+  userProfile,
 }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const isLoggedIn = !!user;
+  const userType = userProfile?.user_type as "student" | "owner" | undefined;
+  const userName = userProfile?.full_name as string | undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 12);
@@ -60,6 +60,12 @@ export default function Navigation({
         page: "dashboard" as PageType,
         icon: LayoutDashboard,
         show: isLoggedIn && userType === "owner",
+      },
+      {
+        name: "Find Roommates",
+        page: "roommates" as PageType,
+        icon: Users,
+        show: isLoggedIn,
       },
     ],
     [isLoggedIn, userType]
@@ -170,9 +176,12 @@ export default function Navigation({
           <div className="mt-auto border-t border-slate-100 pt-6">
             {isLoggedIn ? (
               <button
-                onClick={() => {
-                  onLogout();
-                  setIsOpen(false);
+                onClick={async () => {
+                  try {
+                    await signOut();
+                    setIsOpen(false);
+                    onNavigate("home");
+                  } catch { /* silent */ }
                 }}
                 className="flex w-full items-center gap-4 rounded-2xl p-4 text-base font-bold leading-[1.2] text-rose-600 hover:bg-rose-50"
               >

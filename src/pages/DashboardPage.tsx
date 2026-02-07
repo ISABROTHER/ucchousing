@@ -237,7 +237,7 @@ export default function DashboardPage({
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Price Per Night ($) *
+                    Price Per Semester (GHS) *
                   </label>
                   <input
                     type="number"
@@ -387,7 +387,7 @@ export default function DashboardPage({
                       <td className="px-6 py-4 font-semibold text-gray-900">{hostel.name}</td>
                       <td className="px-6 py-4 text-gray-600">{hostel.city}</td>
                       <td className="px-6 py-4 font-semibold text-[#DC143C]">
-                        ${hostel.price_per_night}
+                        GHS {hostel.price_per_night}
                       </td>
                       <td className="px-6 py-4 text-gray-600">{hostel.beds_available}</td>
                       <td className="px-6 py-4">

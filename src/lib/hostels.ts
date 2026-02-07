@@ -301,7 +301,7 @@ export const Indexer = {
 export async function getAllHostelsRepository() {
   const { data, error } = await supabase
     .from('hostels')
-    .select('*')
+    .select('*, images:hostel_images(id, image_url, display_order)')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -315,7 +315,7 @@ export async function getHostels() {
 export async function getFeaturedHostels(limit: number = 6) {
   const { data, error } = await supabase
     .from('hostels')
-    .select('*')
+    .select('*, images:hostel_images(id, image_url, display_order)')
     .eq('verified', true)
     .order('rating', { ascending: false })
     .limit(limit);
@@ -330,12 +330,17 @@ export async function getHostelById(id: string) {
     .select(`
       *,
       images:hostel_images(*),
-      amenities:hostel_amenities(*)
+      hostel_amenities(id, amenity:amenities(id, name, icon, category))
     `)
     .eq('id', id)
     .maybeSingle();
 
   if (error) throw error;
+  if (data && data.hostel_amenities) {
+    data.amenities = data.hostel_amenities
+      .map((ha: any) => ha.amenity)
+      .filter(Boolean);
+  }
   return data;
 }
 

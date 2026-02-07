@@ -31,7 +31,7 @@ export default function RoommateBanner({ onNavigate }: RoommateBannerProps) {
     <div className="mx-auto max-w-5xl px-4 mt-10">
       <button
         type="button"
-        onClick={() => onNavigate("search")}
+        onClick={() => onNavigate("roommates")}
         className="group relative flex w-full items-center justify-between overflow-hidden rounded-xl bg-red-600 px-4 py-4 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
         aria-label="Open roommate and smart search"
       >

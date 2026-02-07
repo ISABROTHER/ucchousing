@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft, Zap } from "lucide-react";
+import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft, Zap, Send } from "lucide-react";
 import { PageType } from "../App";
 import { getHostelById } from "../lib/hostels";
-import { getHostelReviews } from "../lib/reviews";
+import { getHostelReviews, createReview } from "../lib/reviews";
 
 // --- Manual Data Fallback (Fixes "Not Found" for featured cards) ---
 const MANUAL_HOSTELS: Record<string, any> = {
@@ -58,6 +58,177 @@ const MANUAL_HOSTELS: Record<string, any> = {
     ],
   },
 };
+
+function ReviewSection({
+  hostelId,
+  reviews,
+  user,
+  userProfile,
+  isManual,
+  onReviewAdded,
+}: {
+  hostelId: string;
+  reviews: any[];
+  user: any;
+  userProfile: any;
+  isManual: boolean;
+  onReviewAdded: () => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  const canReview = !!user && userProfile?.user_type === "student" && !isManual;
+  const alreadyReviewed = reviews.some((r) => r.student_id === user?.id);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || rating === 0) return;
+
+    setSubmitting(true);
+    setReviewError("");
+
+    try {
+      await createReview({
+        hostel_id: hostelId,
+        student_id: user.id,
+        rating,
+        comment: comment.trim() || undefined,
+        is_verified_guest: false,
+      });
+      setReviewSuccess(true);
+      setShowForm(false);
+      setRating(0);
+      setComment("");
+      onReviewAdded();
+      setTimeout(() => setReviewSuccess(false), 3000);
+    } catch {
+      setReviewError("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Reviews ({reviews.length})</h2>
+        {canReview && !alreadyReviewed && !showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 text-sm font-bold text-[#DC143C] hover:text-red-700 transition-colors"
+          >
+            <Send className="w-4 h-4" />
+            Write a Review
+          </button>
+        )}
+      </div>
+
+      {reviewSuccess && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+          <p className="text-green-700 font-semibold text-sm">Review submitted!</p>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+          <h3 className="font-bold text-gray-900 mb-4">Your Review</h3>
+          {reviewError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm font-medium">{reviewError}</p>
+            </div>
+          )}
+          <form onSubmit={handleSubmitReview} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`w-7 h-7 ${
+                        star <= (hoverRating || rating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-200"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Comment (optional)</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                placeholder="Share your experience..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#DC143C]/30 focus:border-[#DC143C]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={submitting || rating === 0}
+                className="bg-[#DC143C] text-white font-bold px-6 py-2.5 rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setReviewError(""); }}
+                className="px-6 py-2.5 border border-gray-200 rounded-xl font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {reviews.length > 0 ? (
+        <div className="space-y-6">
+          {reviews.map((review) => (
+            <div key={review.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="font-bold text-gray-900">{review.user_profiles?.full_name || "Anonymous"}</p>
+                  <p className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {review.comment && <p className="text-gray-700">{review.comment}</p>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+          <Star className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">No reviews yet. Be the first to review!</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface HostelDetailPageProps {
   hostelId: string;
@@ -327,40 +498,19 @@ export default function HostelDetailPage({ hostelId, user, userProfile, onNaviga
                 </div>
               )}
 
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Reviews ({reviews.length})</h2>
-
-                {reviews.length > 0 ? (
-                  <div className="space-y-6">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <p className="font-bold text-gray-900">{review.user_profiles?.full_name || "Anonymous"}</p>
-                            <p className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        {review.comment && <p className="text-gray-700">{review.comment}</p>}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                    <Star className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No reviews yet. Be the first to review!</p>
-                  </div>
-                )}
-              </div>
+              <ReviewSection
+                hostelId={hostelId}
+                reviews={reviews}
+                user={user}
+                userProfile={userProfile}
+                isManual={!!MANUAL_HOSTELS[hostelId]}
+                onReviewAdded={async () => {
+                  if (!MANUAL_HOSTELS[hostelId]) {
+                    const r = await getHostelReviews(hostelId);
+                    setReviews(Array.isArray(r) ? r : []);
+                  }
+                }}
+              />
             </div>
 
             {/* Optional right column space on desktop (keeps layout balanced). No new UI added. */}
