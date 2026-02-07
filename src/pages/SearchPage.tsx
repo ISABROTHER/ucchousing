@@ -15,10 +15,12 @@ import {
   Bell,
   Zap,
   TrendingUp,
+  GitCompareArrows,
 } from "lucide-react";
 import { getAllHostelsRepository } from "../lib/hostels";
 import { PageType } from "../App";
 import { MobileFilterDrawer, DesktopFilterBar, AMENITY_OPTIONS } from "./search/SearchFilters";
+import { getCompareList, addToCompare, removeFromCompare } from "../lib/compare";
 
 // ----------------------------------------------------------------------
 // LAYER 1: DOMAIN & UTILS (Pure Logic)
@@ -449,10 +451,14 @@ function SearchMosaicCard({
   item,
   onOpen,
   query,
+  isCompare,
+  onCompareToggle,
 }: {
   item: IndexedHostel;
   onOpen: () => void;
   query: string;
+  isCompare: boolean;
+  onCompareToggle: () => void;
 }) {
   const images = Indexer.getImageUrls(item.hostel);
   const safeImages = [...images];
@@ -588,10 +594,20 @@ function SearchMosaicCard({
 
       {/* DETAILS LAYOUT */}
       <div className="px-2 pb-2 space-y-3">
-        {/* Name */}
-        <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors`}>
+        <div className="flex items-start justify-between gap-2">
+        <h3 className={`text-xl font-extrabold text-slate-900 leading-tight ${theme.nameHover} transition-colors flex-1`}>
           {TextUtils.highlight(item.name, query)}
         </h3>
+          <button
+            onClick={(e) => { e.stopPropagation(); onCompareToggle(); }}
+            className={`shrink-0 p-2 rounded-full transition-all ${
+              isCompare ? "bg-sky-50 text-sky-600" : "text-slate-400 hover:text-sky-600 hover:bg-sky-50"
+            }`}
+            title={isCompare ? "Remove from compare" : "Add to compare"}
+          >
+            <GitCompareArrows className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Full-Width Availability Bar */}
         <div className="relative -mx-2">
@@ -726,6 +742,7 @@ interface SearchPageProps {
 export default function SearchPage({ onNavigate }: SearchPageProps) {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [compareList, setCompareList] = useState<string[]>(getCompareList());
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -1135,7 +1152,20 @@ export default function SearchPage({ onNavigate }: SearchPageProps) {
           ) : filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 gap-8">
               {paged.map((it) => (
-                <SearchMosaicCard key={it.id} item={it} query={debouncedSearch} onOpen={() => onNavigate("detail", it.id)} />
+                <SearchMosaicCard
+                  key={it.id}
+                  item={it}
+                  query={debouncedSearch}
+                  onOpen={() => onNavigate("detail", it.id)}
+                  isCompare={compareList.includes(it.id)}
+                  onCompareToggle={() => {
+                    if (compareList.includes(it.id)) {
+                      setCompareList(removeFromCompare(it.id));
+                    } else {
+                      setCompareList(addToCompare(it.id));
+                    }
+                  }}
+                />
               ))}
 
               {filteredItems.length > visibleCount && (
