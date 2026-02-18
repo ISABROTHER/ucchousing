@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft, Zap, Send, GitCompareArrows } from "lucide-react";
+import { Star, MapPin, Users, Wifi, Clock, AlertCircle, ChevronLeft, Zap, Send } from "lucide-react";
 import { PageType } from "../App";
 import { getHostelById } from "../lib/hostels";
 import { getHostelReviews, createReview } from "../lib/reviews";
-import WishlistButton from "../components/WishlistButton";
-import PhotoLightbox from "../components/PhotoLightbox";
 
 // --- Manual Data Fallback (Fixes "Not Found" for featured cards) ---
 const MANUAL_HOSTELS: Record<string, any> = {
@@ -237,21 +235,13 @@ interface HostelDetailPageProps {
   user: any;
   userProfile: any;
   onNavigate: (page: PageType, hostelId?: string) => void;
-  wishlistIds: string[];
-  onWishlistToggle: (hostelId: string, newState: boolean) => void;
-  compareIds: string[];
-  onCompareToggle: (hostelId: string) => void;
 }
 
-export default function HostelDetailPage({
-  hostelId, user, userProfile, onNavigate,
-  wishlistIds, onWishlistToggle, compareIds, onCompareToggle,
-}: HostelDetailPageProps) {
+export default function HostelDetailPage({ hostelId, user, userProfile, onNavigate }: HostelDetailPageProps) {
   const [hostel, setHostel] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     void loadHostel();
@@ -356,68 +346,24 @@ export default function HostelDetailPage({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-10 lg:mb-12">
             {/* LEFT COLUMN: IMAGES */}
             <div className="lg:col-span-2">
-              <div
-                className="relative bg-gray-200 rounded-xl overflow-hidden h-72 sm:h-96 mb-4 flex items-center justify-center shadow-sm cursor-pointer group"
-                onClick={() => {
-                  if (hostel.images?.length > 0) setLightboxOpen(true);
-                }}
-              >
+              <div className="relative bg-gray-200 rounded-xl overflow-hidden h-72 sm:h-96 mb-4 flex items-center justify-center shadow-sm">
                 {hostel.images && hostel.images.length > 0 ? (
                   <img
                     src={hostel.images[imageIndex]?.image_url}
                     alt={`${hostel.name} - image ${imageIndex + 1}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="text-gray-400 text-4xl">No Photo</div>
+                  <div className="text-gray-400 text-4xl">🏠</div>
                 )}
 
-                <div className="absolute top-4 left-4 flex items-center gap-2">
-                  {hostel.verified && (
-                    <div className="bg-[#DC143C] text-white px-4 py-2 rounded-full font-semibold shadow-md text-sm">
-                      Verified
-                    </div>
-                  )}
-                </div>
-
-                <div className="absolute top-4 right-4 flex items-center gap-2">
-                  <WishlistButton
-                    hostelId={hostelId}
-                    userId={user?.id || null}
-                    isWishlisted={wishlistIds.includes(hostelId)}
-                    onToggle={onWishlistToggle}
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCompareToggle(hostelId);
-                    }}
-                    className={`p-2 rounded-full transition-all ${
-                      compareIds.includes(hostelId)
-                        ? "bg-sky-50 text-sky-600 shadow-sm"
-                        : "bg-white/80 backdrop-blur-sm text-gray-400 hover:text-sky-600 hover:bg-sky-50"
-                    }`}
-                    title={compareIds.includes(hostelId) ? "Remove from compare" : "Add to compare"}
-                  >
-                    <GitCompareArrows className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {hostel.images?.length > 1 && (
-                  <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                    {imageIndex + 1} / {hostel.images.length}
+                {hostel.verified && (
+                  <div className="absolute top-4 left-4 bg-[#DC143C] text-white px-4 py-2 rounded-full font-semibold shadow-md">
+                    Verified
                   </div>
                 )}
               </div>
-
-              {lightboxOpen && hostel.images?.length > 0 && (
-                <PhotoLightbox
-                  images={hostel.images.map((img: any) => img.image_url)}
-                  initialIndex={imageIndex}
-                  onClose={() => setLightboxOpen(false)}
-                />
-              )}
 
               {hostel.images && hostel.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

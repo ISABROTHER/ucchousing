@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* SAFETY NET: Prevent horizontal scrolling/stretching on mobile */
   html, body {
     width: 100%;
     overflow-x: hidden;
@@ -12,13 +13,4 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translate(-50%, 20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-@keyframes shimmer {
-  to { transform: translateX(100%); }
 }
