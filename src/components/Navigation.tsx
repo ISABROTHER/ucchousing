@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users,
   MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart,
-  Shirt, FileText, Zap
+  Shirt, FileText, Zap, Home
 } from "lucide-react";
 import { PageType } from "../App";
 import { signOut } from "../lib/auth";
@@ -73,6 +73,31 @@ export default function Navigation({
   };
 
   const totalBadge = unreadMessages + unreadNotifications;
+
+  const quickLinks = useMemo(() => {
+    const base = [
+      { label: 'Home', page: 'home' as PageType, icon: Home },
+      { label: 'Search', page: 'search' as PageType, icon: Search },
+    ];
+    if (!isLoggedIn) return base;
+    if (userType === 'owner') return [
+      ...base,
+      { label: 'Dashboard', page: 'dashboard' as PageType, icon: LayoutDashboard },
+      { label: 'Messages', page: 'messages' as PageType, icon: MessageCircle },
+    ];
+    return [
+      ...base,
+      { label: 'My Bookings', page: 'my-bookings' as PageType, icon: Calendar },
+      { label: 'Laundry', page: 'laundry' as PageType, icon: Shirt },
+      { label: 'Maintenance', page: 'maintenance' as PageType, icon: Wrench },
+      { label: 'Messages', page: 'messages' as PageType, icon: MessageCircle },
+      { label: 'Saved', page: 'wishlist' as PageType, icon: Heart },
+      { label: 'Roommates', page: 'roommates' as PageType, icon: Users },
+      { label: 'Tenancy', page: 'tenancy' as PageType, icon: FileText },
+      { label: 'Utilities', page: 'utilities' as PageType, icon: Zap },
+      { label: 'Expenses', page: 'expenses' as PageType, icon: DollarSign },
+    ];
+  }, [isLoggedIn, userType]);
 
   const studentLinks = [
     { name: "Find Hostels", page: "search" as PageType, icon: Search },
@@ -170,6 +195,34 @@ export default function Navigation({
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 mt-2">
+        <div className="relative">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {quickLinks.map((link) => {
+              const Icon = link.icon;
+              const active = currentPage === link.page;
+              return (
+                <button
+                  key={link.page}
+                  onClick={() => handleNavClick(link.page)}
+                  className={`group relative flex shrink-0 items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                    active
+                      ? 'border-amber-300 bg-amber-400 text-slate-900 shadow-sm shadow-amber-200'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
+                  <span>{link.label}</span>
+                  {active && (
+                    <span className="absolute -bottom-0.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-amber-600" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
