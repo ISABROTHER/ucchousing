@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users,
   MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart,
@@ -14,6 +14,55 @@ interface NavigationProps {
   onNavigate: (page: PageType) => void;
   user: any;
   userProfile: any;
+}
+
+interface QuickLink { label: string; page: PageType; icon: React.ComponentType<{ className?: string }> }
+
+function QuickNavBar({ quickLinks, currentPage, onNavigate }: { quickLinks: QuickLink[]; currentPage: PageType; onNavigate: (p: PageType) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeIdx = quickLinks.findIndex(l => l.page === currentPage);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const active = scrollRef.current.querySelector<HTMLButtonElement>('[data-active="true"]');
+    active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeIdx]);
+
+  return (
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 mt-2">
+      <div
+        ref={scrollRef}
+        className="flex items-stretch overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {quickLinks.map((link, i) => {
+          const Icon = link.icon;
+          const active = currentPage === link.page;
+          const isLast = i === quickLinks.length - 1;
+          return (
+            <button
+              key={link.page}
+              data-active={active}
+              onClick={() => onNavigate(link.page)}
+              className={`group relative flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all duration-200 active:scale-95 focus:outline-none ${
+                !isLast ? 'border-r border-slate-100' : ''
+              } ${
+                active
+                  ? 'bg-amber-400 text-slate-900'
+                  : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              } ${i === 0 ? 'rounded-l-2xl' : ''} ${isLast ? 'rounded-r-2xl' : ''}`}
+            >
+              <Icon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
+              <span className="whitespace-nowrap">{link.label}</span>
+              {active && (
+                <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-600" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function Navigation({
@@ -199,33 +248,7 @@ export default function Navigation({
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 mt-2">
-        <div className="relative">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {quickLinks.map((link) => {
-              const Icon = link.icon;
-              const active = currentPage === link.page;
-              return (
-                <button
-                  key={link.page}
-                  onClick={() => handleNavClick(link.page)}
-                  className={`group relative flex shrink-0 items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
-                    active
-                      ? 'border-amber-300 bg-amber-400 text-slate-900 shadow-sm shadow-amber-200'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
-                  <span>{link.label}</span>
-                  {active && (
-                    <span className="absolute -bottom-0.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-amber-600" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <QuickNavBar quickLinks={quickLinks} currentPage={currentPage} onNavigate={handleNavClick} />
 
       <div
         className={`fixed inset-0 z-40 transform bg-white transition-transform duration-300 ease-in-out ${
