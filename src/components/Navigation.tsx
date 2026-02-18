@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users } from "lucide-react";
+import {
+  Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users,
+  MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart
+} from "lucide-react";
 import { PageType } from "../App";
 import { signOut } from "../lib/auth";
+import { getUnreadCount } from "../lib/messaging";
+import { getUnreadNotificationCount } from "../lib/notifications";
 
 interface NavigationProps {
   currentPage: PageType;
@@ -18,6 +23,8 @@ export default function Navigation({
 }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const isLoggedIn = !!user;
   const userType = userProfile?.user_type as "student" | "owner" | undefined;
@@ -29,13 +36,31 @@ export default function Navigation({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessages(0);
+      setUnreadNotifications(0);
+      return;
+    }
+    const load = async () => {
+      const [msgCount, notifCount] = await Promise.all([
+        getUnreadCount(user.id).catch(() => 0),
+        getUnreadNotificationCount(user.id).catch(() => 0),
+      ]);
+      setUnreadMessages(msgCount);
+      setUnreadNotifications(notifCount);
+    };
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const myPageTarget = useMemo<PageType>(() => {
     if (!isLoggedIn) return "auth" as PageType;
     if (userType === "owner") return "dashboard" as PageType;
     return "my-bookings" as PageType;
   }, [isLoggedIn, userType]);
 
-  // Extract first name for the pill display (e.g. "Isa" from "Isa Brother")
   const firstName = useMemo(() => {
     if (!userName) return "";
     return userName.split(" ")[0];
@@ -46,41 +71,45 @@ export default function Navigation({
     setIsOpen(false);
   };
 
-  const menuLinks = useMemo(
-    () => [
-      { name: "Find Hostels", page: "search" as PageType, icon: Search, show: true },
-      {
-        name: "My Bookings",
-        page: "my-bookings" as PageType,
-        icon: Calendar,
-        show: isLoggedIn && userType === "student",
-      },
-      {
-        name: "Dashboard",
-        page: "dashboard" as PageType,
-        icon: LayoutDashboard,
-        show: isLoggedIn && userType === "owner",
-      },
-      {
-        name: "Find Roommates",
-        page: "roommates" as PageType,
-        icon: Users,
-        show: isLoggedIn,
-      },
-    ],
-    [isLoggedIn, userType]
-  );
+  const totalBadge = unreadMessages + unreadNotifications;
+
+  const studentLinks = [
+    { name: "Find Hostels", page: "search" as PageType, icon: Search },
+    { name: "My Bookings", page: "my-bookings" as PageType, icon: Calendar },
+    { name: "Messages", page: "messages" as PageType, icon: MessageCircle, badge: unreadMessages },
+    { name: "Check-In QR", page: "qr-checkin" as PageType, icon: QrCode },
+    { name: "Maintenance", page: "maintenance" as PageType, icon: Wrench },
+    { name: "Expenses", page: "expenses" as PageType, icon: DollarSign },
+    { name: "Saved Hostels", page: "wishlist" as PageType, icon: Heart },
+    { name: "Find Roommates", page: "roommates" as PageType, icon: Users },
+    { name: "Notifications", page: "notifications" as PageType, icon: Bell, badge: unreadNotifications },
+  ];
+
+  const ownerLinks = [
+    { name: "Dashboard", page: "dashboard" as PageType, icon: LayoutDashboard },
+    { name: "Messages", page: "messages" as PageType, icon: MessageCircle, badge: unreadMessages },
+    { name: "Notifications", page: "notifications" as PageType, icon: Bell, badge: unreadNotifications },
+    { name: "Find Hostels", page: "search" as PageType, icon: Search },
+  ];
+
+  const guestLinks = [
+    { name: "Find Hostels", page: "search" as PageType, icon: Search },
+  ];
+
+  const menuLinks = useMemo(() => {
+    if (!isLoggedIn) return guestLinks;
+    if (userType === "owner") return ownerLinks;
+    return studentLinks;
+  }, [isLoggedIn, userType, unreadMessages, unreadNotifications]);
 
   return (
     <nav className="fixed top-0 z-50 w-full">
       <div className={`mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 ${scrolled ? "pt-2" : "pt-4"}`}>
-        {/* Pill container */}
         <div
           className={`flex items-center gap-2 rounded-3xl border border-slate-200 bg-white transition-all duration-300 ${
             scrolled ? "px-3 py-2 shadow-sm" : "px-3 py-3"
           }`}
         >
-          {/* Left: Logo (Pushed to left) */}
           <button
             onClick={() => handleNavClick("home")}
             className="mr-auto flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
@@ -91,10 +120,7 @@ export default function Navigation({
             </div>
           </button>
 
-          {/* Right Group: Search, My Page, Menu */}
           <div className="flex min-w-0 items-center gap-2">
-            
-            {/* 1. Search Button */}
             <button
               onClick={() => handleNavClick("search" as PageType)}
               className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
@@ -104,17 +130,35 @@ export default function Navigation({
               <span className="min-w-0 truncate hidden sm:inline">Search</span>
             </button>
 
-            {/* 2. My Page Button (Amber - Direct Link - "Alone") */}
+            {isLoggedIn && (
+              <button
+                onClick={() => handleNavClick("notifications")}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#DC143C] text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => handleNavClick(myPageTarget)}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98] relative"
               aria-label="My Page"
             >
-              {isLoggedIn ? <User className="h-5 w-5" /> : <User className="h-5 w-5" />}
+              <User className="h-5 w-5" />
               <span>{isLoggedIn && firstName ? firstName : "My Page"}</span>
+              {totalBadge > 0 && !unreadNotifications && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#DC143C] text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+                  {totalBadge > 9 ? '9+' : totalBadge}
+                </span>
+              )}
             </button>
 
-            {/* 3. Menu Button (Separate Shade Trigger) */}
             <button
               onClick={() => setIsOpen((v) => !v)}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 transition-colors hover:bg-slate-100 active:scale-[0.98]"
@@ -122,19 +166,17 @@ export default function Navigation({
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-
           </div>
         </div>
       </div>
 
-      {/* Slide-in menu (Shade) */}
       <div
         className={`fixed inset-0 z-40 transform bg-white transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex h-full flex-col p-6 pt-24">
-          <div className="flex items-center justify-between">
+        <div className="flex h-full flex-col p-6 pt-24 overflow-y-auto">
+          <div className="flex items-center justify-between mb-6">
             <div className="text-lg font-bold text-slate-900">
               {isLoggedIn && firstName ? `Hi, ${firstName}` : "Menu"}
             </div>
@@ -147,30 +189,34 @@ export default function Navigation({
             </button>
           </div>
 
-          <div className="mt-5 flex flex-col gap-2">
-            {menuLinks
-              .filter((l) => l.show)
-              .map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => handleNavClick(link.page)}
-                  className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] transition-colors ${
-                    currentPage === link.page ? "bg-amber-50 text-amber-700" : "text-slate-900 hover:bg-slate-50"
-                  }`}
-                >
-                  <link.icon className="h-6 w-6" />
-                  {link.name}
-                </button>
-              ))}
+          <div className="flex flex-col gap-1">
+            {menuLinks.map((link) => (
+              <button
+                key={link.name}
+                onClick={() => handleNavClick(link.page)}
+                className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] transition-colors ${
+                  currentPage === link.page ? "bg-amber-50 text-amber-700" : "text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                <link.icon className="h-6 w-6 flex-shrink-0" />
+                <span className="flex-1">{link.name}</span>
+                {'badge' in link && link.badge > 0 && (
+                  <span className="bg-[#DC143C] text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                    {link.badge}
+                  </span>
+                )}
+              </button>
+            ))}
 
-            {/* Extra My Page Link in Menu (for completeness) */}
-            <button
-              onClick={() => handleNavClick(myPageTarget)}
-              className="flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] text-slate-900 hover:bg-slate-50"
-            >
-              <User className="h-6 w-6" />
-              {isLoggedIn ? "My Profile" : "My Page"}
-            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => handleNavClick(myPageTarget)}
+                className="flex w-full items-center gap-4 rounded-2xl p-4 text-left text-base font-bold leading-[1.2] text-slate-900 hover:bg-slate-50"
+              >
+                <User className="h-6 w-6" />
+                My Profile
+              </button>
+            )}
           </div>
 
           <div className="mt-auto border-t border-slate-100 pt-6">
@@ -181,7 +227,7 @@ export default function Navigation({
                     await signOut();
                     setIsOpen(false);
                     onNavigate("home");
-                  } catch { /* silent */ }
+                  } catch { }
                 }}
                 className="flex w-full items-center gap-4 rounded-2xl p-4 text-base font-bold leading-[1.2] text-rose-600 hover:bg-rose-50"
               >
