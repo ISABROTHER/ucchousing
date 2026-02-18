@@ -219,7 +219,7 @@ export default function LaundryPage({ user, userProfile, onNavigate }: LaundryPa
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="mx-auto max-w-2xl">
-        <div className="bg-white border-b border-gray-100 px-4 py-5 sticky top-24 z-10">
+        <div className="bg-white border-b border-gray-100 px-4 py-5 sticky top-16 z-10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-bold text-gray-900 text-lg">Laundry Hub</h1>

@@ -113,7 +113,7 @@ function App() {
         currentPage={state.currentPage}
       />
 
-      <main className="pt-24 w-full">
+      <main className="pt-16 w-full">
         {state.currentPage === 'home' && (
           <HomePage onNavigate={handleNavigate} />
         )}

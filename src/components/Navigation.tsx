@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users,
   MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart,
@@ -16,54 +16,6 @@ interface NavigationProps {
   userProfile: any;
 }
 
-interface QuickLink { label: string; page: PageType; icon: React.ComponentType<{ className?: string }> }
-
-function QuickNavBar({ quickLinks, currentPage, onNavigate }: { quickLinks: QuickLink[]; currentPage: PageType; onNavigate: (p: PageType) => void }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const activeIdx = quickLinks.findIndex(l => l.page === currentPage);
-
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    const active = scrollRef.current.querySelector<HTMLButtonElement>('[data-active="true"]');
-    active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [activeIdx]);
-
-  return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 mt-2">
-      <div
-        ref={scrollRef}
-        className="flex items-stretch overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {quickLinks.map((link, i) => {
-          const Icon = link.icon;
-          const active = currentPage === link.page;
-          const isLast = i === quickLinks.length - 1;
-          return (
-            <button
-              key={link.page}
-              data-active={active}
-              onClick={() => onNavigate(link.page)}
-              className={`group relative flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all duration-200 active:scale-95 focus:outline-none ${
-                !isLast ? 'border-r border-slate-100' : ''
-              } ${
-                active
-                  ? 'bg-amber-400 text-slate-900'
-                  : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-              } ${i === 0 ? 'rounded-l-2xl' : ''} ${isLast ? 'rounded-r-2xl' : ''}`}
-            >
-              <Icon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
-              <span className="whitespace-nowrap">{link.label}</span>
-              {active && (
-                <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-600" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export default function Navigation({
   currentPage,
@@ -188,9 +140,10 @@ export default function Navigation({
             scrolled ? "px-3 py-2 shadow-sm" : "px-3 py-3"
           }`}
         >
+          {/* Logo — always visible */}
           <button
             onClick={() => handleNavClick("home")}
-            className="mr-auto flex items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
+            className="flex shrink-0 items-center gap-2 rounded-2xl px-2 py-2 outline-none transition-transform active:scale-95"
             aria-label="Go to home"
           >
             <div className="flex h-9 w-10 items-center justify-center rounded-2xl">
@@ -198,16 +151,61 @@ export default function Navigation({
             </div>
           </button>
 
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              onClick={() => handleNavClick("search" as PageType)}
-              className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
-              aria-label="Search"
+          {isLoggedIn ? (
+            /* ── LOGGED-IN: inline scrollable nav strip ── */
+            <div
+              className="flex min-w-0 flex-1 items-stretch overflow-x-auto rounded-xl border border-slate-100"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              <Search className="h-5 w-5 shrink-0 text-slate-900" />
-              <span className="min-w-0 truncate hidden sm:inline">Search</span>
-            </button>
+              {quickLinks.map((link, i) => {
+                const Icon = link.icon;
+                const active = currentPage === link.page;
+                const isLast = i === quickLinks.length - 1;
+                return (
+                  <button
+                    key={link.page}
+                    onClick={() => handleNavClick(link.page)}
+                    className={`group relative flex shrink-0 items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 focus:outline-none active:scale-95 ${
+                      !isLast ? 'border-r border-slate-100' : ''
+                    } ${
+                      active
+                        ? 'bg-amber-400 text-slate-900'
+                        : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                    } ${i === 0 ? 'rounded-l-xl' : ''} ${isLast ? 'rounded-r-xl' : ''}`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
+                    <span className="whitespace-nowrap">{link.label}</span>
+                    {active && (
+                      <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-600" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            /* ── GUEST: original search + my page buttons ── */
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => handleNavClick("search" as PageType)}
+                className="inline-flex min-w-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 active:scale-[0.98]"
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5 shrink-0 text-slate-900" />
+                <span className="hidden truncate sm:inline">Search</span>
+              </button>
+              <button
+                onClick={() => handleNavClick(myPageTarget)}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98]"
+                aria-label="Sign In"
+              >
+                <User className="h-5 w-5" />
+                <span>My Page</span>
+              </button>
+            </div>
+          )}
 
+          {/* Hamburger — always visible */}
+          <div className="flex shrink-0 items-center gap-1.5">
             {isLoggedIn && (
               <button
                 onClick={() => handleNavClick("notifications")}
@@ -222,21 +220,6 @@ export default function Navigation({
                 )}
               </button>
             )}
-
-            <button
-              onClick={() => handleNavClick(myPageTarget)}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-amber-400 active:scale-[0.98] relative"
-              aria-label="My Page"
-            >
-              <User className="h-5 w-5" />
-              <span>{isLoggedIn && firstName ? firstName : "My Page"}</span>
-              {totalBadge > 0 && !unreadNotifications && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#DC143C] text-white rounded-full text-[10px] font-bold flex items-center justify-center">
-                  {totalBadge > 9 ? '9+' : totalBadge}
-                </span>
-              )}
-            </button>
-
             <button
               onClick={() => setIsOpen((v) => !v)}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 transition-colors hover:bg-slate-100 active:scale-[0.98]"
@@ -247,8 +230,6 @@ export default function Navigation({
           </div>
         </div>
       </div>
-
-      <QuickNavBar quickLinks={quickLinks} currentPage={currentPage} onNavigate={handleNavClick} />
 
       <div
         className={`fixed inset-0 z-40 transform bg-white transition-transform duration-300 ease-in-out ${
