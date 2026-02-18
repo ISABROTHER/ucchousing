@@ -3,6 +3,7 @@ import HomeHero from "./home/HomeHero";
 import HomeCategories from "./home/HomeCategories";
 import HomeFeatured from "./home/HomeFeatured";
 import RoommateBanner from "./home/RoommateBanner";
+import ServicesBanner from "./home/ServicesBanner";
 
 interface HomePageProps {
   onNavigate: (page: PageType, hostelId?: string) => void;
@@ -13,8 +14,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     <div className="min-h-screen bg-gray-50 text-slate-900 pb-20">
       <HomeHero />
       <RoommateBanner onNavigate={onNavigate} />
+      <ServicesBanner onNavigate={onNavigate} />
       <HomeCategories onNavigate={onNavigate} />
       <HomeFeatured onNavigate={onNavigate} />
     </div>
   );
-} 
+}

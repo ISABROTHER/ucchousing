@@ -15,11 +15,15 @@ import MaintenancePage from './pages/MaintenancePage';
 import ExpensesPage from './pages/ExpensesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import WishlistPage from './pages/WishlistPage';
+import LaundryPage from './pages/LaundryPage';
+import TenancyPage from './pages/TenancyPage';
+import UtilitiesPage from './pages/UtilitiesPage';
 
 export type PageType =
   | 'home' | 'search' | 'detail' | 'auth' | 'booking' | 'dashboard'
   | 'my-bookings' | 'roommates' | 'messages' | 'qr-checkin' | 'maintenance'
-  | 'expenses' | 'notifications' | 'wishlist';
+  | 'expenses' | 'notifications' | 'wishlist'
+  | 'laundry' | 'tenancy' | 'utilities';
 
 interface AppState {
   currentPage: PageType;
@@ -189,6 +193,27 @@ function App() {
         {state.currentPage === 'wishlist' && (
           <WishlistPage
             user={state.user}
+            onNavigate={handleNavigate}
+          />
+        )}
+        {state.currentPage === 'laundry' && (
+          <LaundryPage
+            user={state.user}
+            userProfile={state.userProfile}
+            onNavigate={handleNavigate}
+          />
+        )}
+        {state.currentPage === 'tenancy' && (
+          <TenancyPage
+            user={state.user}
+            userProfile={state.userProfile}
+            onNavigate={handleNavigate}
+          />
+        )}
+        {state.currentPage === 'utilities' && (
+          <UtilitiesPage
+            user={state.user}
+            userProfile={state.userProfile}
             onNavigate={handleNavigate}
           />
         )}

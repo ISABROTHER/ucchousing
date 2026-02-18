@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Menu, X, Search, User, LogOut, Calendar, LayoutDashboard, Users,
-  MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart
+  MessageCircle, QrCode, Wrench, DollarSign, Bell, Heart,
+  Shirt, FileText, Zap
 } from "lucide-react";
 import { PageType } from "../App";
 import { signOut } from "../lib/auth";
@@ -82,6 +83,9 @@ export default function Navigation({
     { name: "Expenses", page: "expenses" as PageType, icon: DollarSign },
     { name: "Saved Hostels", page: "wishlist" as PageType, icon: Heart },
     { name: "Find Roommates", page: "roommates" as PageType, icon: Users },
+    { name: "Laundry Hub", page: "laundry" as PageType, icon: Shirt },
+    { name: "Tenancy & Rent", page: "tenancy" as PageType, icon: FileText },
+    { name: "Utilities", page: "utilities" as PageType, icon: Zap },
     { name: "Notifications", page: "notifications" as PageType, icon: Bell, badge: unreadNotifications },
   ];
 
